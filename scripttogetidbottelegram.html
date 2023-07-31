@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+  $("button").click(function(){
+	var token = $('#token_bot').val();
+	console.log(token);
+	if(token != null && token != "") {
+		getChatId(token);
+	} else {
+		alert("Preencha o token para iniciar o processo");
+	}
+	
+    
+  });
+  
+  function getChatId(token) {
+	  try {
+		$.get("https://api.telegram.org/bot"+token+"/getUpdates", function(data){
+			if(data.result.length  > 0){
+				$('#chat_id').append(" "+data.result[0].message.chat.id);
+			} else {
+				getChatId(token);
+			}
+		}).fail(function() {
+			console.log( "error" );
+			getChatId(token);
+		  });
+	  } catch(e) {
+		getChatId(token);
+	  }
+  }
+});
+</script>
+</head>
+<body>
+<input type="text" placeholder="token chatbot" id="token_bot" />
+<p id="chat_id"> Chat Id: </p>
+<button>Pega Chat ID </button>
+
+
+</body>
+</html>
