@@ -154,7 +154,7 @@ void loop() {
   readSHT21Data(temperature, humidity);  // Chama a função para ler os dados do sensor SHT21
 //------------------------------------
   sensors_event_t event; 
-   accel.getEvent(&event);
+  accel.getEvent(&event);
   //------------------------------------
   // Construir o objeto JSON
   DynamicJsonDocument doc(256); // Tamanho do buffer JSON

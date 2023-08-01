@@ -42,8 +42,8 @@ void loop()
     incomingString = lora.readString();
     Serial.println(incomingString);
 
-    char dataArray[20]; 
-    incomingString.toCharArray(dataArray,20);
+    char dataArray[70]; 
+    incomingString.toCharArray(dataArray,70);
     char* data = strtok(dataArray, ",");
     data = strtok(NULL, ",");
     data = strtok(NULL, ",");
