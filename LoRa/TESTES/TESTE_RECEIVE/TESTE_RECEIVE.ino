@@ -41,14 +41,17 @@ void loop()
 
     incomingString = lora.readString();
     Serial.println(incomingString);
-
+   
     char dataArray[70]; 
     incomingString.toCharArray(dataArray,70);
     char* data = strtok(dataArray, ",");
     data = strtok(NULL, ",");
     data = strtok(NULL, ",");
+    
     Serial.println(incomingString);
+
     Serial.println(data);
+
     if (strcmp(data,"123456789") == 0){
     digitalWrite(2,status);
     Serial.println("deu bom");

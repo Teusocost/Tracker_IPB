@@ -37,7 +37,7 @@ void setup()
 void loop()
 {
     //lora.println("AT+SEND=" + lora_RX_address + ",2,LO"); // AT+SEND=1,2,LO
-    lora.println("AT+SEND=2,9,123456789");
+    lora.println("AT+SEND=1,9,123456789");
     Serial.println(lora.readString());
     //Serial.println("enviado LO");
     delay(2000);
