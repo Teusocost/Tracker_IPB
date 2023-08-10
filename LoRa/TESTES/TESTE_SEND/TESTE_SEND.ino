@@ -1,8 +1,9 @@
-#include <SoftwareSerial.h>
+#include <HardwareSerial.h>
+#define rxGPS 16
+#define txGPS 17
 
-SoftwareSerial lora(16, 17); //RX TX
-
-String lora_RX_address = "2";   //enter Lora RX address
+HardwareSerial lora(2); //n das portas Uart do esp
+char end_to_send = '2';   // endereço do lora que vai recever esse pacote
 void setup()
 {
   Serial.begin(115200);
@@ -36,30 +37,24 @@ void loop()
 {        
     double lat = -41.123456;
     double lon = 6.123456;
-    int sat = 7;
     int vel = 2;
     float temp = 42.22;
     float hum = 53.44;
-    float x = 10;
-    float y = 9;
-    float z = 8;
-    float Bat_Volt = 4.1;
+    float x = -10.02;
+    float y = -10.04;
+    float z = 8.41;
     float bat = 80;
   
-    char mensagem[70];
-    sprintf(mensagem, "AT+SEND=2,47,%.6f/%.6f/%i/%i/%.2f/%.2f/%.0f/%.0f/%.0f/%.0f/%.0f",lat, lon, sat, vel, temp, hum, x, y, z, Bat_Volt, bat );
+    char mensagem[120];
+    char data[70];
+    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0f",lat, lon, vel, temp, hum, x, y, z, bat);
+    int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
 
-    lora.println(mensagem);
-    //delay(200);
-    Serial.println(lora.readString());
-    Serial.println(mensagem);
-    //lora.println("AT+SEND=" + lora_RX_address + ",2,LO"); // AT+SEND=1,2,LO
-    //lora.println("AT+SEND=2," + strlen(lat) + "," + lat + "\r\n");
+    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
+    lora.println(mensagem); //manda a mensagem montada para o módulo
+    Serial.println(mensagem); //imprime no monitor a mensagem montada 
+    Serial.println(lora.readString()); //lê a resposta do módulo
     
-    //Serial.println("enviado LO");
-    delay(500);
-    //lora.println("AT+SEND=" + lora_RX_address + ",2,HI"); // AT+SEND=1,2,HI
-    //Serial.println(lora.readString());
-    //Serial.println("enviado HI");
-    //delay(2000);
+    delay(2000);
+
 }

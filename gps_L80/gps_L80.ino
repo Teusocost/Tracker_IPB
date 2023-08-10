@@ -4,7 +4,7 @@
 #define txGPS 17
  
 long lat, lon;
-HardwareSerial gpsSerial(1);
+HardwareSerial gpsSerial(2);
 
 
 TinyGPSPlus gps;

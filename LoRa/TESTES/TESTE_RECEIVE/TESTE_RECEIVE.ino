@@ -2,14 +2,14 @@
 
 String incomingString;
 
-SoftwareSerial lora(16,17);
+SoftwareSerial lora(9,10); //RX TX
 bool status = 1;
 void setup()
 {
   pinMode(2,OUTPUT);
   Serial.begin(115200);
   lora.begin(115200);
-  lora.setTimeout(1000);
+  lora.setTimeout(2000);
     //lora.println("AT+RESET");
   //Serial.println(lora.readString());
   //delay(1000);
@@ -37,7 +37,8 @@ void setup()
 
 void loop()
 {
-  if (lora.available()) {
+  if (lora.available()) 
+  {
 
     incomingString = lora.readString();
     Serial.println(incomingString);
@@ -48,7 +49,7 @@ void loop()
     data = strtok(NULL, ",");
     data = strtok(NULL, ",");
     
-    Serial.println(incomingString);
+    //Serial.println(incomingString);
 
     Serial.println(data);
 
