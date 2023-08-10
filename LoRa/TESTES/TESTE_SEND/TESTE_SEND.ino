@@ -40,16 +40,16 @@ void loop()
     int vel = 2;
     float temp = 42.22;
     float hum = 53.44;
-    float x = -10.02;
-    float y = -10.04;
+    float x = -2.02;
+    float y = 4.04;
     float z = 8.41;
     float bat = 80;
   
     char mensagem[120];
     char data[70];
-    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0f",lat, lon, vel, temp, hum, x, y, z, bat);
+    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0fJ",lat, lon, vel, temp, hum, x, y, z, bat); //atribui e organiza as informações em data
+    //o caractere J indica o fim da mensagem
     int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
-
     sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
     lora.println(mensagem); //manda a mensagem montada para o módulo
     Serial.println(mensagem); //imprime no monitor a mensagem montada 

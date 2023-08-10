@@ -2,8 +2,8 @@
 #include <string.h>
 
 int main() {
-    char inputString[] = "A-41.123456B6.123456C2D42.22E53.44F-10.02G-10.04H8.41I80";
-    char markers[] = "ABCDEFGHI";
+    char inputString[] = "A-41.123456B6.123456C2D42.22E53.44F-10.02G-10.04H8.41I80J";
+    char markers[] = "ABCDEFGHIJ";
     char extractedStrings[9][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 
     int i, j = 0, startPos = -1, count = 0;
@@ -22,9 +22,8 @@ int main() {
         }
     }
 
-    for (i = 0; i < count; i++) {
+    for (i = 1; i < count; i++) {
         printf("Marker %c: %s\n", extractedStrings[i][0], extractedStrings[i] + 1);
     }
-
     return 0;
 }

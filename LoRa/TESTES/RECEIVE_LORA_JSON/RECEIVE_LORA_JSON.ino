@@ -5,8 +5,8 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-#define rxGPS 25
-#define txGPS 26
+#define rxLoRa 25
+#define txLoRA 26
 
 HardwareSerial lora(1);
 String incomingString;
@@ -64,7 +64,7 @@ void reconnect() {
 void setup()
 {
   Serial.begin(115200); // connect serial
-  lora.begin(115200, SERIAL_8N1, rxGPS, txGPS); // connect gps sensor
+  lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
   //------------------------------------
   // definições WIFI/MQTT
   setup_wifi();
@@ -84,27 +84,58 @@ void loop()
         data = strtok(dataArray, ",");
         data = strtok(NULL, ",");
         data = strtok(NULL, ",");
-        
         //Serial.println(incomingString);
-
         Serial.println(data);
-    
     }
+    //----------------------------------------------
+    // Dividir data em pacotes 
+    char markers[] = "ABCDEFGHIJ";
+    char extractedStrings[9][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
+                                  //J indica o fim da string
+
+    int i, j = 0, startPos = -1, count = 0;
+
+    for (i = 0; data[i] != '\0'; i++) {
+        if (strchr(markers, data[i])) { { // se input contem markers
+            if (startPos != -1) 
+                extractedStrings[count][j] = '\0';
+                count++;
+                j = 0;
+            }
+            extractedStrings[count][j++] = data[i];
+            startPos = i;
+        } else if (startPos != -1) {
+            extractedStrings[count][j++] = data[i];
+        }
+    }
+
+    for (i = 0; i < count; i++) {
+        printf("Marker %c: %s\n", extractedStrings[i+1][0], extractedStrings[i+1] + 1);
+    }
+    //------------------------------------------------------
     DynamicJsonDocument doc(1024); // Tamanho do buffer JSON
-    float outro = 5.52;
-    doc["outro"] = outro;
-    doc["dado"] = data;
+    doc["latitude"] = extractedStrings[1]+1;
+    doc["longitude"] = extractedStrings[2]+1;
+    doc["vel"] = extractedStrings[3]+1;
+    doc["temperatura"] = extractedStrings[4]+1;
+    doc["umidade"] = extractedStrings[5]+1;
+    doc["X"] = extractedStrings[6]+1;
+    doc["Y"] = extractedStrings[7]+1;
+    doc["Z"] = extractedStrings[8]+1;
+    doc["Bat_Perc"] = extractedStrings[9]+1;
     // Serializar o objeto JSON em uma string
     String jsonData;
     serializeJson(doc, jsonData);
-      if (!client.connected()) {
+    //-------------------------
+    //confere conexão
+    if (!client.connected()) {
     reconnect();
     }
     client.loop();
 
-  //------------------------------------
+  //-------------------------------------------
     // Publicar no tópico especificado
-    if (client.publish("IPB/TESTE/TRACKER/01", jsonData.c_str())) 
+    if (client.publish("IPB/TESTE/TRACKER/01", jsonData.c_str())) //encaminha json montado!
     {
         Serial.println("Message published successfully");
         delay(2000);
