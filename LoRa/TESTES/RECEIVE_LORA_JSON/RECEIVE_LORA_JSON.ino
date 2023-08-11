@@ -1,12 +1,10 @@
-#include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <HardwareSerial.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include <ArduinoJson.h>
 
-#define rxLoRa 25
-#define txLoRA 26
+#define rxLoRa 16
+#define txLoRA 17
 
 HardwareSerial lora(1);
 String incomingString;

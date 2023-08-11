@@ -14,6 +14,7 @@ int main() {
                 extractedStrings[count][j] = '\0';
                 count++;
                 j = 0;
+            
             }
             extractedStrings[count][j++] = inputString[i];
             startPos = i;

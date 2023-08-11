@@ -1,8 +1,8 @@
 #include <HardwareSerial.h>
-#define rxGPS 25
-#define txGPS 26
+#define rxGPS 16
+#define txGPS 17
 
-HardwareSerial lora(1);
+HardwareSerial lora(2);
 String incomingString;
 
 void setup()
