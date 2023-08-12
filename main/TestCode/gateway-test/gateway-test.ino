@@ -30,6 +30,7 @@ HardwareSerial lora(1); // objeto Lora
 String incomingString;  // string que vai receber as informações
 
 char markers[] = "ABCDEFGHIJ"; // J indica o fim da string
+char *data; // para armazenar as informações que chegam
 char extractedStrings[9][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 void zerar_extractedStrings(); //para zerar a matriz
 
@@ -55,8 +56,6 @@ void toggleSerial(bool enable)
   }
 }
 
-//--------data
-char *data;
 
 void setup_wifi()
 {
@@ -153,7 +152,7 @@ void loop(){
       printf("Marker %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
     }
     //------------------------------------------------------
-    DynamicJsonDocument doc(512); // Tamanho do buffer JSON
+    DynamicJsonDocument doc(256); // Tamanho do buffer JSON
     doc["latitude"] = extractedStrings[1] + 1;
     doc["longitude"] = extractedStrings[2] + 1;
     doc["vel"] = extractedStrings[3] + 1;
