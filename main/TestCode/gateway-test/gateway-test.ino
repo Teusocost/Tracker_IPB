@@ -112,6 +112,7 @@ void setup()
 void loop(){
   //Serial.println("Aguardando mensagem LoRa");
   if (lora.available()){
+    Serial.println("======================="); //debug serial
     incomingString = lora.readString();
     Serial.println(incomingString);
     //----------------------------------------------
@@ -149,19 +150,19 @@ void loop(){
     }
 
     for (i = 0; i < count; i++){
-      printf("Marker %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
+      printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
     }
     //------------------------------------------------------
     DynamicJsonDocument doc(256); // Tamanho do buffer JSON
-    doc["latitude"] = extractedStrings[1] + 1;
-    doc["longitude"] = extractedStrings[2] + 1;
-    doc["vel"] = extractedStrings[3] + 1;
-    doc["temperatura"] = extractedStrings[4] + 1;
-    doc["umidade"] = extractedStrings[5] + 1;
-    doc["X"] = extractedStrings[6] + 1;
-    doc["Y"] = extractedStrings[7] + 1;
-    doc["Z"] = extractedStrings[8] + 1;
-    doc["Bat_Perc"] = extractedStrings[9] + 1;
+    doc["latitude"] = extractedStrings[1] + 1;    // -- A
+    doc["longitude"] = extractedStrings[2] + 1;   // -- B
+    doc["vel"] = extractedStrings[3] + 1;         // -- C
+    doc["temperatura"] = extractedStrings[4] + 1; // -- D
+    doc["umidade"] = extractedStrings[5] + 1;     // -- E
+    doc["X"] = extractedStrings[6] + 1;           // -- F
+    doc["Y"] = extractedStrings[7] + 1;           // -- G
+    doc["Z"] = extractedStrings[8] + 1;           // -- H
+    doc["Bat_Perc"] = extractedStrings[9] + 1;    // -- I
     // Serializar o objeto JSON em uma string
     String jsonData;
     serializeJson(doc, jsonData);
@@ -182,7 +183,7 @@ void loop(){
     // Publicar no tópico especificado
     if (client.publish("IPB/TESTE/TRACKER/01", jsonData.c_str())){ // encaminha json montado!
       Serial.println("Message published successfully");
-      delay(2000);
+      delay(200);
     }
     else{
       Serial.println("Failed to publish message");
