@@ -2,7 +2,7 @@
 #include <string.h>
 
 int main() {
-    char inputString[] = "A-41.123456B6.123456C2D42.22E53.44F-10.02G-10.04H8.41I80J";
+    char inputString[] = "A-41.123456B6.123456C2D42.22E53.44F-10.02G-10.04H8.41I0J452";
     char markers[] = "ABCDEFGHIJ";
     char extractedStrings[9][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 

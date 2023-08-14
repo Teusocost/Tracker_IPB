@@ -109,8 +109,8 @@ void loop(){
   //-----------------------------------
   //organizar e enviar LoRa
     char mensagem[120]; //mensagem completa
-    char data[70]; //apenas variáveis
-    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0fJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
+    char data[80]; //apenas variáveis
+    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
     //o caractere J indica o fim da mensagem
     int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
     sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"

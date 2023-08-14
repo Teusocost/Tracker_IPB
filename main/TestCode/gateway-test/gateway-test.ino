@@ -31,7 +31,7 @@ String incomingString;  // string que vai receber as informações
 
 char markers[] = "ABCDEFGHIJ"; // J indica o fim da string
 char *data; // para armazenar as informações que chegam
-char extractedStrings[9][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
+char extractedStrings[10][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 void zerar_extractedStrings(); //para zerar a matriz
 
 void zerar_extractedStrings(){ //função para zerar string que armazena os dados
@@ -149,20 +149,20 @@ void loop(){
       }
     }
 
-    for (i = 0; i < count; i++){
+    for (i = 0; i < count-1; i++){ // -1 por que J não conta
       printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
     }
     //------------------------------------------------------
     DynamicJsonDocument doc(256); // Tamanho do buffer JSON
-    doc["latitude"] = extractedStrings[1] + 1;    // -- A
-    doc["longitude"] = extractedStrings[2] + 1;   // -- B
-    doc["vel"] = extractedStrings[3] + 1;         // -- C
-    doc["temperatura"] = extractedStrings[4] + 1; // -- D
-    doc["umidade"] = extractedStrings[5] + 1;     // -- E
-    doc["X"] = extractedStrings[6] + 1;           // -- F
-    doc["Y"] = extractedStrings[7] + 1;           // -- G
-    doc["Z"] = extractedStrings[8] + 1;           // -- H
-    doc["Bat_Perc"] = extractedStrings[9] + 1;    // -- I
+    doc["latitude"] = atof(extractedStrings[1] + 1);    // -- A
+    doc["longitude"] = atof(extractedStrings[2] + 1);   // -- B
+    doc["vel"] = atof(extractedStrings[3] + 1);         // -- C
+    doc["temperatura"] = atof(extractedStrings[4] + 1); // -- D
+    doc["umidade"] = atof(extractedStrings[5] + 1);     // -- E
+    doc["X"] = atof(extractedStrings[6] + 1);           // -- F
+    doc["Y"] = atof(extractedStrings[7] + 1);           // -- G
+    doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
+    doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
     // Serializar o objeto JSON em uma string
     String jsonData;
     serializeJson(doc, jsonData);

@@ -11,7 +11,7 @@
 
 float voltage;
 int bat_percentage;
-int analogInPin  = 15;    // Analog input pin
+int analogInPin  = 33;    // Analog input pin
 int sensorValue; 
 float calibration = 0.36; // Check Battery voltage using multimeter & add/subtract the value
 void setup() {
