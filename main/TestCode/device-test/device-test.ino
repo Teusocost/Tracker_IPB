@@ -10,6 +10,9 @@ double lat = 0, lon = 0;
 int sat = 0, vel = 0;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
+float time_wait_gps = 5000; // tempo em ms que espera o GPS receber coordenadas
+float time_control = 0; //para controlar o tempo
+float time_comp = 1000; // diferença entre segundo ao qual a mensagem "coord n encontradas" será mostrado
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -47,7 +50,7 @@ int Percentage;
 // fator de conversão de microsegundos para segundos
 #define uS_TO_S_FACTOR 1000000
 // tempo que o ESP32 ficará em modo sleep (em segundos)
-#define TIME_TO_SLEEP 4.3
+#define TIME_TO_SLEEP 4
 
 //---------------------------------------------------------
 //---------------------------------------------------------
@@ -70,8 +73,8 @@ void setup()
   // Acelerômetro
   if (!accel.begin()){
     Serial.println("No ADXL345 sensor detected.");
-    while (1)
-      ;
+    Serial.println("Resentando");
+    ESP.restart(); //Função para resetar ESP
   }
   //------------------------------------
   // LoRa
@@ -80,7 +83,7 @@ void setup()
 
 void loop(){
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
-  Serial.println("======================="); //debug serial.print
+  Serial.println("=======ESP INICIADO========="); //debug serial.print
   //------------------------------------
   // status da bateria (funççao externa)
   batterystatus(Voltage, Percentage);
@@ -91,16 +94,24 @@ void loop(){
   accel.getEvent(&event);
   //------------------------------------
   // Capturando dados GPS
-  while (gpsSerial.available())
-  {
-    if (gps.encode(gpsSerial.read())) // encode gps data
-    {
+
+  unsigned long now = millis(); // iniciando função para contagem
+  while (gpsSerial.available()){ // Entra no laço se comunicação está ok
+    if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
       gps.encode(gpsSerial.read()); // processar dados brutos
-      //-----------------------------------
-      // atribuição e plot de resultados de gps
+      while(lat == 0 && lon == 0 ){ // loop para aguardar latitude e longitude
+        lat = gps.location.lat(); // latitude
+        lon = gps.location.lng(); // longitude
+        if(millis() - time_control >= 1000){ // condição para imprimir status (aguardando)
+          time_control = millis();
+          Serial.println("Aguardaddo coordenadas");
+          if ((millis() - now) >= time_wait_gps) { // Se não encontrar lat e lon os dados são enviados sem esses
+            Serial.println("Coordenadas não encontradas"); // informa essa condição
+            break;
+          }
+        }
+      }
       sat = gps.satellites.value(); //número de satélites
-      lat = gps.location.lat(); //latitude 
-      lon = gps.location.lng(); // longitude
       vel = gps.speed.mps(); //velocidade
       break;
       //-----------------------------------
@@ -108,20 +119,20 @@ void loop(){
   }
   //-----------------------------------
   //organizar e enviar LoRa
-    char mensagem[120]; //mensagem completa
-    char data[80]; //apenas variáveis
-    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
-    //o caractere J indica o fim da mensagem
-    int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
-    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
-    lora.println(mensagem); //manda a mensagem montada para o módulo
-    Serial.println(mensagem); //imprime no monitor a mensagem montada 
-    Serial.println(lora.readString()); //lê a resposta do módulo
-    //-----------------------------------
-    //led para indicar envio
-    digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH);
-    delay(200);
-    digitalWrite(LED_BUILTIN_MQTT_SEND, LOW);
-  // esp_deep_sleep_start(); //força o ESP32 entrar em modo SLEEP
+  char mensagem[120]; //mensagem completa
+  char data[80]; //apenas variáveis
+  sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
+  //o caractere J indica o fim da mensagem
+  int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
+  sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
+  lora.println(mensagem); //manda a mensagem montada para o módulo
+  Serial.println(mensagem); //imprime no monitor a mensagem montada 
+  Serial.println(lora.readString()); //lê a resposta do módulo
+  //-----------------------------------
+  //led para indicar envio
+  digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH);
+  delay(200);
+  digitalWrite(LED_BUILTIN_MQTT_SEND, LOW);
+  esp_deep_sleep_start(); //força o ESP32 entrar em modo SLEEP
 }
 
