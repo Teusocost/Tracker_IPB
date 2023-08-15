@@ -44,7 +44,7 @@ void loop()
     float y = 4.04;
     float z = 8.41;
     float bat = 80;
-  
+
     char mensagem[120];
     char data[70];
     sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0fJ",lat, lon, vel, temp, hum, x, y, z, bat); //atribui e organiza as informações em data
@@ -54,6 +54,7 @@ void loop()
     lora.println(mensagem); //manda a mensagem montada para o módulo
     Serial.println(mensagem); //imprime no monitor a mensagem montada 
     Serial.println(lora.readString()); //lê a resposta do módulo
+    
     
     delay(2000);
 
