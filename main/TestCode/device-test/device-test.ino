@@ -53,9 +53,9 @@ int Percentage;
 #define TIME_TO_SLEEP 4
 
 //---------------------------------------------------------
-//---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
-
+void led_to_send();
+//---------------------------------------------------------
 void setup()
 {
   // definições placa
@@ -94,7 +94,6 @@ void loop(){
   accel.getEvent(&event);
   //------------------------------------
   // Capturando dados GPS
-
   unsigned long now = millis(); // iniciando função para contagem
   while (gpsSerial.available()){ // Entra no laço se comunicação está ok
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
@@ -118,7 +117,9 @@ void loop(){
     }
   }
   //-----------------------------------
+  //-----------------------------------
   //organizar e enviar LoRa
+
   char mensagem[120]; //mensagem completa
   char data[80]; //apenas variáveis
   sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
@@ -130,9 +131,13 @@ void loop(){
   Serial.println(lora.readString()); //lê a resposta do módulo
   //-----------------------------------
   //led para indicar envio
+  void led_to_send();
+  //-----------------------------------
+}
+
+void led_to_send (){
   digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH);
   delay(200);
   digitalWrite(LED_BUILTIN_MQTT_SEND, LOW);
   esp_deep_sleep_start(); //força o ESP32 entrar em modo SLEEP
 }
-

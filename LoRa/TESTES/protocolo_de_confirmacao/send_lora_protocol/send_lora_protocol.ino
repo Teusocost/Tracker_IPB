@@ -1,11 +1,29 @@
 #include <HardwareSerial.h>
-#define rxGPS 16
-#define txGPS 17
+#include <string.h>
+#define rxLoRa 16
+#define txLoRA 17
 
 HardwareSerial lora(2); //n das portas Uart do esp
+String incomingString;  // string que vai receber as informações
+char *searchTerm = "OK"; //mensagem que chega para confirmação
+char *conf; // para armazenar as informações que chegam
 char end_to_send = '2';   // endereço do lora que vai recever esse pacote
-void setup()
+char dataArray[30];
+bool serialEnabled = true; // Variável de controle para a comunicação serial
+
+void toggleSerial(bool enable)
 {
+  if (enable)
+  {
+    lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA);
+  }
+  else
+  {
+    lora.end();
+  }
+}
+
+void setup(){
   Serial.begin(115200);
   lora.begin(115200);
   lora.setTimeout(1000);
@@ -35,6 +53,7 @@ void setup()
 
 void loop()
 {        
+    toggleSerial(false);  //começa tudo desligado
     double lat = -41.123456;
     double lon = 6.123456;
     int vel = 2;
@@ -51,12 +70,31 @@ void loop()
     //o caractere J indica o fim da mensagem
     int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
     sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
+    toggleSerial(true); //liga a comunicação com LoRa
     lora.println(mensagem); //manda a mensagem montada para o módulo
     Serial.println(mensagem); //imprime no monitor a mensagem montada 
     Serial.println(lora.readString()); //lê a resposta do módulo
-    
-    
-    delay(2000);
+    while(-1){
+      Serial.println("Aguardando confirmação");
+      Serial.println(lora.readString()); //lê a resposta do módulo
+      incomingString = lora.readString();
+      Serial.println(incomingString);
 
+      incomingString.toCharArray(dataArray, 30);
+      conf = strtok(dataArray, ",");
+      conf = strtok(NULL, ",");
+      conf = strtok(NULL, ",");
+      // Serial.println(incomingString);
+      Serial.println(conf);
+      if(strstr(conf, searchTerm) != NULL){
+      Serial.println("confirmação chegou!");
+      toggleSerial(false);
+      break;
+      }
+    }
+     //desliga a comunicação com LoRa
+    conf = "\0";
+    toggleSerial(false);
+    delay(2000);
 }
 
