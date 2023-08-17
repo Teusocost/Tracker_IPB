@@ -133,11 +133,12 @@ void loop(){
   //led para indicar envio
   void led_to_send();
   //-----------------------------------
+  //força o ESP32 entrar em modo SLEEP
+  esp_deep_sleep_start(); 
 }
 
 void led_to_send (){
   digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH);
   delay(200);
   digitalWrite(LED_BUILTIN_MQTT_SEND, LOW);
-  esp_deep_sleep_start(); //força o ESP32 entrar em modo SLEEP
 }
