@@ -11,7 +11,8 @@ void setup() {
     // Escrever strings no mesmo arquivo
     appendToFile("/dados.txt", "Primeira string de exemplo.\n");
     appendToFile("/dados.txt", "Segunda string de exemplo.\n");
-
+    appendToFile("/dados.txt", "terceira string de exemplo.\n");
+    appendToFile("/dados.txt", "quarta string de exemplo.\n");
     float oi = 5;
     char variavel[100];
     sprintf(variavel, "Esta é uma string de exemplo para escrita no arquivo %.0f.\n", oi);
