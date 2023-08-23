@@ -18,9 +18,20 @@ float time_comp = 1000; // diferença entre segundo ao qual a mensagem "coord n 
 #define rxLORA 25
 #define txLORA 26
 HardwareSerial lora(1);
-String incomingString;
+
 char LED_BUILTIN_MQTT_SEND = 2; //pisca led quando envia LoRa
 char end_to_send = '2';   // endereço do lora que vai receber esse pacote
+
+unsigned int time_to_resend = 3000; // tempo em ms para nova tentativa de envio LoRa
+unsigned time_finish_resend = 30000; //Tempo em ms de tentativas
+
+char mensagem[120]; //Vetor para mensagem completa
+char data[80]; //Vetor para apenas variáveis
+String incomingString = "NULL";  // string que vai receber as informações
+char *searchTerm = "OK"; //mensagem que chega para confirmação
+char *conf; // para armazenar as informações que chegam
+
+bool serialEnabled = true; // Variável de controle para a comunicação serial
 //---------------------------------------------------------
 // Bibliotecas e definições para sht21 - I2C
 #include <Wire.h>
@@ -55,6 +66,7 @@ int Percentage;
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
 void led_to_send();
+void toggleSerial(bool enable);
 //---------------------------------------------------------
 void setup()
 {
@@ -79,11 +91,15 @@ void setup()
   //------------------------------------
   // LoRa
   lora.begin(115200, SERIAL_8N1, rxLORA, txLORA); // connect gps sensor
+  lora.println("AT+ADDRESS?"); // para conferir o endereco do modulo
+  Serial.println(lora.readString()); // para conferir o endereco do modulo
 }
 
 void loop(){
+  toggleSerial(false);  //Comunicacao com LoRa Desligado
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
   Serial.println("=======ESP INICIADO========="); //debug serial.print
+  //Serial.println(lora.readString()); // para conferir o endereco do modulo
   //------------------------------------
   // status da bateria (funççao externa)
   batterystatus(Voltage, Percentage);
@@ -120,15 +136,59 @@ void loop(){
   //-----------------------------------
   //organizar e enviar LoRa
 
-  char mensagem[120]; //mensagem completa
-  char data[80]; //apenas variáveis
   sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
   //o caractere J indica o fim da mensagem
   int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
   sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
+  toggleSerial(true); //liga a comunicação com LoRa
   lora.println(mensagem); //manda a mensagem montada para o módulo
   Serial.println(mensagem); //imprime no monitor a mensagem montada 
   Serial.println(lora.readString()); //lê a resposta do módulo
+
+  //----------------------------------------
+  //protocolo de confirmação de envio
+  Serial.println("Aguardando confirmação (30 segundos)");
+  float time = millis(); //administrar tempo geral de tentativa
+  float time_reenv = millis()+time_to_resend; //adminstrar tempo de reenvio
+  int tent = 1; //n de tentativas
+  while(-1){ // laco para receber confirmação
+    //--------------------------------
+    //Confere se confirmação chegou
+    toggleSerial(true); // liga serial
+    delay(10);
+    incomingString = lora.readString(); //lê a resposta do módulo
+    toggleSerial(false); //desliga serial
+    //------------------------------
+    //reenvia mensagem
+    if(millis() >= time_reenv){ //em n segundos, se não chegou confirmacao
+      Serial.printf("Reenviando pacote, tentativa %d\n",tent++);
+      time_reenv = millis()+time_to_resend; 
+      reen_data();
+    }
+    if(millis()-time >= time_finish_resend){ //fim do laço de tentativas
+      Serial.println("fim de tentativas");
+      break; //fecha laço While
+    }
+    if(incomingString != NULL){ // se chegou algum dado
+      Serial.println(incomingString); // mostra dado
+      char dataArray[50]; // vetor para trabalhar com informação
+      incomingString.toCharArray(dataArray, 50); //transforma string em char
+      //Serial.println(dataArray);
+      conf = strtok(dataArray, ","); // quebra ,
+      conf = strtok(NULL, ","); //quebra ,
+      conf = strtok(NULL, ","); //quebra ,
+      Serial.println(conf); //Mostra a confirmação
+      char msg_to_conf[] = "OK"; //Mensagem esperada
+      if(strcmp(conf,"OK")==0){ //Se mensagem que chegou for a mesma que a esperada
+      Serial.println("confirmação chegou!"); //mostra confirmacao
+      break; //fecha laço While
+      }
+    }
+  }
+  //-----------------------------------
+  //força o ESP32 entrar em modo SLEEP
+  Serial.println(("sistema entrando em Deep Sleep"));
+  esp_deep_sleep_start();
   //-----------------------------------
   //led para indicar envio
   void led_to_send();
@@ -138,7 +198,26 @@ void loop(){
 }
 
 void led_to_send (){
-  digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH);
-  delay(200);
-  digitalWrite(LED_BUILTIN_MQTT_SEND, LOW);
+  digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH); //Liga Led
+  delay(200); //tempo de led ligado
+  digitalWrite(LED_BUILTIN_MQTT_SEND, LOW);//Desliga led
+}
+
+void reen_data(){ //funcao para reenviar dados
+  toggleSerial(true); //Liga serial
+  delay(10);
+  lora.println(mensagem); //manda a mensagem montada para o módulo 
+  Serial.println(lora.readString()); //lê a resposta do módulo
+  toggleSerial(false); //DEsliga Serial
+}
+
+void toggleSerial(bool enable){ //funcao ligar/desligar comunicao com LORA
+  if (enable)
+  {
+    lora.begin(115200, SERIAL_8N1, rxLORA, txLORA); 
+  }
+  else
+  {
+    lora.end();
+  }
 }

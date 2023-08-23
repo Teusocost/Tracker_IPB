@@ -109,6 +109,8 @@ void setup()
   // definições WIFI/MQTT
   setup_wifi();
   client.setServer(mqttServer, mqttPort);
+  lora.println("AT+ADDRESS?"); // para conferir o endereco do modulo
+  Serial.println(lora.readString()); // para conferir o endereco do modulo
 }
 
 void loop(){

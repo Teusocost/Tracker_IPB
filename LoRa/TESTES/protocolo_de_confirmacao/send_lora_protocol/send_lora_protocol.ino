@@ -47,6 +47,8 @@ void setup(){
   lora.begin(115200);
   lora.setTimeout(1000);
   delay(1500);
+  lora.println("AT+ADDRESS?"); // para conferir o endereco do modulo
+  Serial.println(lora.readString()); // para conferir o endereco do modulo
   //lora.println("AT+RESET");
   //Serial.println(lora.readString());
   //delay(1000);

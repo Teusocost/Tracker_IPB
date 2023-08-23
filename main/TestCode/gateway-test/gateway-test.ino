@@ -29,6 +29,8 @@ PubSubClient client(espClient);
 HardwareSerial lora(1); // objeto Lora
 String incomingString;  // string que vai receber as informações
 
+char end_to_send = '1'; // endereço do outro lora
+
 char markers[] = "ABCDEFGHIJ"; // J indica o fim da string
 char *data; // para armazenar as informações que chegam
 char extractedStrings[10][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
@@ -103,6 +105,8 @@ void setup()
 {
   Serial.begin(115200);                           // connect serial
   lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
+  lora.println("AT+ADDRESS?"); // para conferir o endereco do modulo
+  Serial.println(lora.readString()); // para conferir o endereco do modulo
   //------------------------------------
   // definições WIFI/MQTT
   setup_wifi();
@@ -195,6 +199,11 @@ void loop(){
     //-------------------------------------------
     toggleSerial(true); // Liga a comunicação serial novamente
     Serial.println("Serial ligada");
+    char conf[30]; //vetor para empacote mensagem de confirmacao
+    sprintf(conf, "AT+SEND=%c,2,OK",end_to_send);
+    lora.println(conf); //manda a mensagem de confirmacao de recebimento
+    Serial.println("mandando mensagem de confirmação..");
+    Serial.println(lora.readString()); //lê a resposta do módulo
     //-------------------------------------------
   }
 }
