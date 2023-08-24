@@ -10,9 +10,9 @@ double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
-float time_wait_gps = 5000; // tempo em ms que espera o GPS receber coordenadas
+float time_wait_gps = 60000; // tempo em ms que espera o GPS receber coordenadas
 float time_control = 0; //para controlar o tempo
-float time_comp = 1000; // diferença entre segundo ao qual a mensagem "coord n encontradas" será mostrado
+float time_comp = 5000; // diferença entre segundo ao qual a mensagem "coord n encontradas" será mostrado
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -23,7 +23,7 @@ char LED_BUILTIN_MQTT_SEND = 2; //pisca led quando envia LoRa
 char end_to_send = '2';   // endereço do lora que vai receber esse pacote
 
 unsigned int time_to_resend = 3000; // tempo em ms para nova tentativa de envio LoRa
-unsigned time_finish_resend = 30000; //Tempo em ms de tentativas
+unsigned int time_finish_resend = 30000; //Tempo em ms de tentativas
 
 char mensagem[120]; //Vetor para mensagem completa
 char data[80]; //Vetor para apenas variáveis
@@ -33,6 +33,10 @@ char *searchTerm = "OK"; //mensagem que chega para confirmação
 char *conf; // para armazenar as informações que chegam
 
 bool serialEnabled = true; // Variável de controle para a comunicação serial
+//---------------------------------------------------------
+// Armazenamento SPIFFs
+#include "SPIFFS_Utils.h"
+SPIFFS_Utils spiffsUtils; 
 //---------------------------------------------------------
 // Bibliotecas e definições para sht21 - I2C
 #include <Wire.h>
@@ -117,9 +121,19 @@ void loop(){
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
       gps.encode(gpsSerial.read()); // processar dados brutos
       while(lat == 0 && lon == 0 ){ // loop para aguardar latitude e longitude
-        lat = gps.location.lat(); // latitude
-        lon = gps.location.lng(); // longitude
-        if(millis() - time_control >= 1000){ // condição para imprimir status (aguardando)
+        if (gps.encode(gpsSerial.read())){ //confere se dados brutos chegaram e processa
+          lat = gps.location.lat(); // latitude
+          lon = gps.location.lng(); // longitude
+          sat = gps.satellites.value(); //número de satélites
+          vel = gps.speed.mps(); //velocidade
+          year = gps.date.year(); //ano
+          month = gps.date.month(); //mes
+          day = gps.date.day(); //dia
+          hour = gps.time.hour(); //hora
+          minute = gps.time.minute(); //minuto
+          second = gps.time.second(); //segundo
+        }
+        if(millis() - time_control >= time_comp){ // condição para imprimir status (aguardando)
           time_control = millis();
           Serial.println("Aguardaddo coordenadas");
           if ((millis() - now) >= time_wait_gps) { // Se não encontrar lat e lon os dados são enviados sem esses
@@ -128,15 +142,6 @@ void loop(){
           }
         }
       }
-      sat = gps.satellites.value(); //número de satélites
-      vel = gps.speed.mps(); //velocidade
-      year = gps.date.year(); //ano
-      month = gps.date.month(); //mes
-      day = gps.date.day(); //dia
-      hour = gps.time.hour(); //hora
-      minute = gps.time.minute(); //minuto
-      second = gps.time.second(); //segundo
-      
       break;
       //-----------------------------------
     }
@@ -233,7 +238,10 @@ void toggleSerial(bool enable){ //funcao ligar/desligar comunicao com LORA
 
 void keep_data(){
   Serial.println("dado que serão guardados");
-  sprintf(keep, "%s%.0i-%.0i-%.0iT%.0i:%.0i:%.0i",data,year,month,day,hour,minute,second);
+  sprintf(keep, "%s%.0i-%.0i-%.0iT%.0i:%.0i:%.0i\n",data,year,month,day,hour,minute,second);
   Serial.println(keep);
-
+  spiffsUtils.appendToFile("/dados.txt", keep); //grava um novo valor em SPIFF
+  Serial.println("dados guardados!");
+  Serial.println("Todos os dados:");
+  spiffsUtils.listFiles();
 }
