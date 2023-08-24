@@ -7,7 +7,7 @@
 
 // variávies para GPS
 double lat = 0, lon = 0;
-int sat = 0, vel = 0;
+int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 float time_wait_gps = 5000; // tempo em ms que espera o GPS receber coordenadas
@@ -27,6 +27,7 @@ unsigned time_finish_resend = 30000; //Tempo em ms de tentativas
 
 char mensagem[120]; //Vetor para mensagem completa
 char data[80]; //Vetor para apenas variáveis
+char keep[100]; //Vetor para guardar pacotes com data/hour
 String incomingString = "NULL";  // string que vai receber as informações
 char *searchTerm = "OK"; //mensagem que chega para confirmação
 char *conf; // para armazenar as informações que chegam
@@ -67,6 +68,7 @@ int Percentage;
 //funções instanciadas antes que o sistema passe a funcionar
 void led_to_send();
 void toggleSerial(bool enable);
+void keep_data();
 //---------------------------------------------------------
 void setup()
 {
@@ -128,13 +130,20 @@ void loop(){
       }
       sat = gps.satellites.value(); //número de satélites
       vel = gps.speed.mps(); //velocidade
+      year = gps.date.year(); //ano
+      month = gps.date.month(); //mes
+      day = gps.date.day(); //dia
+      hour = gps.time.hour(); //hora
+      minute = gps.time.minute(); //minuto
+      second = gps.time.second(); //segundo
+      
       break;
       //-----------------------------------
     }
   }
   //-----------------------------------
   //-----------------------------------
-  //organizar e enviar LoRa
+  //organizar e enviar LoRa - tentativa atual
 
   sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
   //o caractere J indica o fim da mensagem
@@ -167,6 +176,8 @@ void loop(){
     }
     if(millis()-time >= time_finish_resend){ //fim do laço de tentativas
       Serial.println("fim de tentativas");
+      keep_data(); //função para guardar dados em SPIFFS
+      Serial.println("Informação guardada");
       break; //fecha laço While
     }
     if(incomingString != NULL){ // se chegou algum dado
@@ -195,7 +206,7 @@ void loop(){
   //-----------------------------------
   //força o ESP32 entrar em modo SLEEP
   esp_deep_sleep_start(); 
-}
+} // fim loop
 
 void led_to_send (){
   digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH); //Liga Led
@@ -212,12 +223,17 @@ void reen_data(){ //funcao para reenviar dados
 }
 
 void toggleSerial(bool enable){ //funcao ligar/desligar comunicao com LORA
-  if (enable)
-  {
+  if (enable){
     lora.begin(115200, SERIAL_8N1, rxLORA, txLORA); 
   }
-  else
-  {
+  else{
     lora.end();
   }
+}
+
+void keep_data(){
+  Serial.println("dado que serão guardados");
+  sprintf(keep, "%s%.0i-%.0i-%.0iT%.0i:%.0i:%.0i",data,year,month,day,hour,minute,second);
+  Serial.println(keep);
+
 }
