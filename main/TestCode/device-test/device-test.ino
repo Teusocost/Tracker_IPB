@@ -71,7 +71,7 @@ int Percentage;
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
 void led_to_send();
-void toggleSerial(bool enable);
+void toggleSerial_lora(bool enable);
 void keep_data();
 //---------------------------------------------------------
 void setup()
@@ -102,7 +102,7 @@ void setup()
 }
 
 void loop(){
-  toggleSerial(false);  //Comunicacao com LoRa Desligado
+  toggleSerial_lora(false);  //Comunicacao com LoRa Desligado
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
   Serial.println("=======ESP INICIADO========="); //debug serial.print
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
@@ -132,8 +132,6 @@ void loop(){
             break;
           }
         }
-        Serial.println(lat);
-        Serial.println(lon);
       }
       read_all_data_gps(); //Se não foi necessário entrar no laço ele armazena os dados de qualquer maneira!
       break;
@@ -148,7 +146,7 @@ void loop(){
   //o caractere J indica o fim da mensagem
   int requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
   sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
-  toggleSerial(true); //liga a comunicação com LoRa
+  toggleSerial_lora(true); //liga a comunicação com LoRa
   lora.println(mensagem); //manda a mensagem montada para o módulo
   Serial.println(mensagem); //imprime no monitor a mensagem montada 
   Serial.println(lora.readString()); //lê a resposta do módulo
@@ -162,10 +160,10 @@ void loop(){
   while(-1){ // laco para receber confirmação
     //--------------------------------
     //Confere se confirmação chegou
-    toggleSerial(true); // liga serial
+    toggleSerial_lora(true); // liga serial
     delay(10);
     incomingString = lora.readString(); //lê a resposta do módulo
-    toggleSerial(false); //desliga serial
+    toggleSerial_lora(false); //desliga serial
     //------------------------------
     //reenvia mensagem
     if(millis() >= time_reenv){ //em n segundos, se não chegou confirmacao
@@ -214,14 +212,14 @@ void led_to_send (){
 }
 
 void reen_data(){ //funcao para reenviar dados
-  toggleSerial(true); //Liga serial
+  toggleSerial_lora(true); //Liga serial
   delay(10);
   lora.println(mensagem); //manda a mensagem montada para o módulo 
   Serial.println(lora.readString()); //lê a resposta do módulo
-  toggleSerial(false); //DEsliga Serial
+  toggleSerial_lora(false); //DEsliga Serial
 }
 
-void toggleSerial(bool enable){ //funcao ligar/desligar comunicao com LORA
+void toggleSerial_lora(bool enable){ //funcao ligar/desligar comunicao com LORA
   if (enable){
     lora.begin(115200, SERIAL_8N1, rxLORA, txLORA); 
   }
