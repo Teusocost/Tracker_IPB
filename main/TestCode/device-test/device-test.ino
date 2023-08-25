@@ -10,7 +10,7 @@ double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
-float time_wait_gps = 60000; // tempo em ms que espera o GPS receber coordenadas
+float time_wait_gps = 120000; // tempo em ms que espera o GPS receber coordenadas
 float time_control = 0; //para controlar o tempo
 float time_comp = 5000; // diferença entre segundo ao qual a mensagem "coord n encontradas" será mostrado
 //---------------------------------------------------------
@@ -121,18 +121,9 @@ void loop(){
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
       gps.encode(gpsSerial.read()); // processar dados brutos
       while(lat == 0 && lon == 0 ){ // loop para aguardar latitude e longitude
-        if (gps.encode(gpsSerial.read())){ //confere se dados brutos chegaram e processa
-          lat = gps.location.lat(); // latitude
-          lon = gps.location.lng(); // longitude
-          sat = gps.satellites.value(); //número de satélites
-          vel = gps.speed.mps(); //velocidade
-          year = gps.date.year(); //ano
-          month = gps.date.month(); //mes
-          day = gps.date.day(); //dia
-          hour = gps.time.hour(); //hora
-          minute = gps.time.minute(); //minuto
-          second = gps.time.second(); //segundo
-        }
+        gpsSerial.available();
+        gps.encode(gpsSerial.read()); //confere se dados brutos chegaram e processa
+        read_all_data_gps(); //lê todos os dados
         if(millis() - time_control >= time_comp){ // condição para imprimir status (aguardando)
           time_control = millis();
           Serial.println("Aguardaddo coordenadas");
@@ -141,7 +132,10 @@ void loop(){
             break;
           }
         }
+        Serial.println(lat);
+        Serial.println(lon);
       }
+      read_all_data_gps(); //Se não foi necessário entrar no laço ele armazena os dados de qualquer maneira!
       break;
       //-----------------------------------
     }
@@ -244,4 +238,17 @@ void keep_data(){
   Serial.println("dados guardados!");
   Serial.println("Todos os dados:");
   spiffsUtils.listFiles();
+}
+
+void read_all_data_gps(){
+  lat = gps.location.lat(); // latitude
+  lon = gps.location.lng(); // longitude
+  sat = gps.satellites.value(); //número de satélites
+  vel = gps.speed.mps(); //velocidade
+  year = gps.date.year(); //ano
+  month = gps.date.month(); //mes
+  day = gps.date.day(); //dia
+  hour = gps.time.hour(); //hora
+  minute = gps.time.minute(); //minuto
+  second = gps.time.second(); //segundo
 }
