@@ -10,7 +10,7 @@ double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
-float time_wait_gps = 120000; // tempo em ms que espera o GPS receber coordenadas
+float time_wait_gps = 600000; // tempo em ms que espera o GPS receber coordenadas
 float time_control = 0; //para controlar o tempo
 float time_comp = 5000; // diferença entre segundo ao qual a mensagem "coord n encontradas" será mostrado
 //---------------------------------------------------------
@@ -72,6 +72,7 @@ int Percentage;
 //funções instanciadas antes que o sistema passe a funcionar
 void led_to_send();
 void toggleSerial_lora(bool enable);
+void toggleSerial_gps(bool enable);
 void keep_data();
 //---------------------------------------------------------
 void setup()
@@ -103,6 +104,7 @@ void setup()
 
 void loop(){
   toggleSerial_lora(false);  //Comunicacao com LoRa Desligado
+  toggleSerial_gps(true); //comunicacao GPS ligada
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
   Serial.println("=======ESP INICIADO========="); //debug serial.print
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
@@ -121,7 +123,6 @@ void loop(){
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
       gps.encode(gpsSerial.read()); // processar dados brutos
       while(lat == 0 && lon == 0 ){ // loop para aguardar latitude e longitude
-        gpsSerial.available();
         gps.encode(gpsSerial.read()); //confere se dados brutos chegaram e processa
         read_all_data_gps(); //lê todos os dados
         if(millis() - time_control >= time_comp){ // condição para imprimir status (aguardando)
@@ -134,6 +135,7 @@ void loop(){
         }
       }
       read_all_data_gps(); //Se não foi necessário entrar no laço ele armazena os dados de qualquer maneira!
+      toggleSerial_gps(true); //comunicacao GPS ligada
       break;
       //-----------------------------------
     }
@@ -225,6 +227,15 @@ void toggleSerial_lora(bool enable){ //funcao ligar/desligar comunicao com LORA
   }
   else{
     lora.end();
+  }
+}
+
+void toggleSerial_gps(bool enable){ //funcao ligar/desligar comunicao com LORA
+  if (enable){
+    gpsSerial.begin(9600, SERIAL_8N1, rxGPS, txGPS); // connect gps sensor 
+  }
+  else{
+    gpsSerial.end();
   }
 }
 
