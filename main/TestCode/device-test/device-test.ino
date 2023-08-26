@@ -10,9 +10,9 @@ double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
-float time_wait_gps = 600000; // tempo em ms que espera o GPS receber coordenadas
+float time_wait_gps = 5000; // tempo em ms que espera o GPS receber coordenadas
 float time_control = 0; //para controlar o tempo
-float time_comp = 5000; // diferença entre segundo ao qual a mensagem "coord n encontradas" será mostrado
+float time_comp = 1000; // diferença entre segundo ao qual a mensagem "coord n encontradas" será mostrado
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -33,6 +33,8 @@ char *searchTerm = "OK"; //mensagem que chega para confirmação
 char *conf; // para armazenar as informações que chegam
 
 bool serialEnabled = true; // Variável de controle para a comunicação serial
+
+int min_quality_signal_resend = -50; //qualidade minima do sinal lora para enviar dado da memoria
 //---------------------------------------------------------
 // Armazenamento SPIFFs
 #include "SPIFFS_Utils.h"
@@ -82,6 +84,7 @@ void setup()
   //------------------------------------
   // gps definições
   gpsSerial.begin(9600, SERIAL_8N1, rxGPS, txGPS); // connect gps sensor
+  lat = 0; lon = 0;
   //------------------------------------
   // sht21 definições
   Wire.begin(SDA_PIN, SCL_PIN); // Inicializa a comunicação I2C
@@ -141,7 +144,6 @@ void loop(){
     }
   }
   //-----------------------------------
-  //-----------------------------------
   //organizar e enviar LoRa - tentativa atual
 
   sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
@@ -159,6 +161,7 @@ void loop(){
   float time = millis(); //administrar tempo geral de tentativa
   float time_reenv = millis()+time_to_resend; //adminstrar tempo de reenvio
   int tent = 1; //n de tentativas
+
   while(-1){ // laco para receber confirmação
     //--------------------------------
     //Confere se confirmação chegou
@@ -189,10 +192,24 @@ void loop(){
       conf = strtok(NULL, ","); //quebra ,
       Serial.println(conf); //Mostra a confirmação
       char msg_to_conf[] = "OK"; //Mensagem esperada
-      if(strcmp(conf,"OK")==0){ //Se mensagem que chegou for a mesma que a esperada
-      Serial.println("confirmação chegou!"); //mostra confirmacao
-      break; //fecha laço While
+      if(strcmp(conf,"OK")==0){ //Se a confirmação chegou for a mesma que a esperada
+        Serial.println("confirmação chegou!"); //mostra confirmacao
+        conf = strtok(NULL, ","); //quebra para conferir qualidade de sinal
+        //signal_quality(conf);
+
+        if(quality_signal_lora(atof(conf))){
+          Serial.println("sinal ta bom");
+          if(lastValue == NULL) {
+            Serial.println("não há nada para enviar")
+          }
+          else String lastValue = spiffsUtils.readLastValue("/dados.txt"); //devolve o ultimo valor gravado
+          Serial.println("Último valor gravado:");
+          Serial.println(lastValue); //imprime o ultimo valor gravado
+          //conferir se há algo na memório
+          // se houver mandar a ultima mensagem registrada
+        }
       }
+      break; //fecha confirmação
     }
   }
   //-----------------------------------
@@ -202,10 +219,13 @@ void loop(){
   //-----------------------------------
   //led para indicar envio
   void led_to_send();
-  //-----------------------------------
-  //força o ESP32 entrar em modo SLEEP
-  esp_deep_sleep_start(); 
+
 } // fim loop
+
+int quality_signal_lora(int value){
+  bool result = (value >= min_quality_signal_resend)? result = true: result = false;
+  return result;
+}
 
 void led_to_send (){
   digitalWrite(LED_BUILTIN_MQTT_SEND, HIGH); //Liga Led
