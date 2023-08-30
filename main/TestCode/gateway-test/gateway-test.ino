@@ -185,10 +185,12 @@ void loop(){
     doc["Y"] = atof(extractedStrings[7] + 1);           // -- G
     doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
     doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
-    if(type_data == 1) doc["time"] = atof(extractedStrings[10] + 1);
+    if(type_data == 1) doc["time"] = (extractedStrings[10] + 1);
     // Serializar o objeto JSON em uma string
     String jsonData;
     serializeJson(doc, jsonData);
+    Serial.println(atof(extractedStrings[10] + 1));
+    Serial.println(jsonData);
     //-------------------------
     // confere conexão
     if (!client.connected()){
