@@ -31,10 +31,13 @@ String incomingString;  // string que vai receber as informações
 
 char end_to_send = '1'; // endereço do outro lora
 
-char markers[] = "ABCDEFGHIJ"; // J indica o fim da string
+char markers[12];// = "ABCDEFGHIJK";  // J indica o fim da string
+//char makers_with_T[] = "ABCDEFGHIJK"; //K indica o fim da string
+
 char *data; // para armazenar as informações que chegam
-char extractedStrings[10][15]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
+char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 void zerar_extractedStrings(); //para zerar a matriz
+char type_data = 0; //tipo de dado que está chegando [0] - atual; [1] - dado guardado
 
 void zerar_extractedStrings(){ //função para zerar string que armazena os dados
     for (int i = 0; i < 9; ++i) {
@@ -123,8 +126,8 @@ void loop(){
     toggleSerial(false); // Desliga a comunicação serial para não haver interrupções indesejadas
     //----------------------------------------------
 
-    char dataArray[70];
-    incomingString.toCharArray(dataArray, 70);
+    char dataArray[100]; //vetor que vai receber string
+    incomingString.toCharArray(dataArray, 100); //método para atribui string a vetor
     data = strtok(dataArray, ",");
     data = strtok(NULL, ",");
     data = strtok(NULL, ",");
@@ -133,10 +136,25 @@ void loop(){
   
     //----------------------------------------------
     // Dividir data em pacotes
+    type_data = 0; //tipo de dado pre estabelecido
     int i, j = 0, startPos = -1, count = 0;
+    //conferir se há T no vetor
+    char last_data[] = "T"; //Caracter para conferir se o dado é anterior  
 
-    for (i = 0; data[i] != '\0'; i++){
-      if (strchr(markers, data[i]))
+    for (i = 0;data[i] != '\0'; i++){
+      if(strchr(last_data,data[i])){ // exsitir "T" no pacote o dado é passado
+       sprintf(markers, "ABCDEFGHIJK"); //atribui K como ultimo caracter (depois do horario)
+       type_data = 1; //flag para indicar que o pacote é passado
+       break;
+      }
+      else{
+        type_data = 0; //flag para pacote em tempo real
+        sprintf(markers, "ABCDEFGHIJ"); // caso contrario o pacote é em tempo real
+      }
+    }
+    //pré processamento - lógica para quebrar o pacote em partes 
+    for (i = 0; data[i] != '\0'; i++){ 
+      if (strchr(markers, data[i])) //analisa se o caractere 
       {
         { // se input contem markers
           if (startPos != -1)
@@ -152,12 +170,12 @@ void loop(){
         extractedStrings[count][j++] = data[i];
       }
     }
-
-    for (i = 0; i < count-1; i++){ // -1 por que J não conta
-      printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
+    for (int i = 0; i < count-1; i++){ // -1 por que J não conta
+    printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
     }
     //------------------------------------------------------
     DynamicJsonDocument doc(256); // Tamanho do buffer JSON
+    
     doc["latitude"] = atof(extractedStrings[1] + 1);    // -- A
     doc["longitude"] = atof(extractedStrings[2] + 1);   // -- B
     doc["vel"] = atof(extractedStrings[3] + 1);         // -- C
@@ -167,6 +185,7 @@ void loop(){
     doc["Y"] = atof(extractedStrings[7] + 1);           // -- G
     doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
     doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
+    if(type_data == 1) doc["time"] = atof(extractedStrings[10] + 1);
     // Serializar o objeto JSON em uma string
     String jsonData;
     serializeJson(doc, jsonData);
