@@ -40,8 +40,8 @@ void zerar_extractedStrings(); //para zerar a matriz
 char type_data = 0; //tipo de dado que está chegando [0] - atual; [1] - dado guardado
 
 void zerar_extractedStrings(){ //função para zerar string que armazena os dados
-    for (int i = 0; i < 9; ++i) {
-        for (int j = 0; j < 15; ++j) {
+    for (int i = 0; i < 12; ++i) {
+        for (int j = 0; j < 21; ++j) {
             extractedStrings[i][j] = '\0';
         }
     }
@@ -142,8 +142,8 @@ void loop(){
     char last_data[] = "Z"; //Caracter para conferir se o dado é anterior  
 
     for (i = 0;data[i] != '\0'; i++){
-      if(strchr(last_data,data[i])){ // exsitir "T" no pacote o dado é passado
-       sprintf(markers, "ABCDEFGHIJZ"); //atribui K como ultimo caracter (depois do horario)
+      if(strchr(last_data,data[i])){ // exsitir "Z" no pacote o dado é passado
+       sprintf(markers, "ABCDEFGHIJZK"); //atribui K como ultimo caracter (depois do horario)
        type_data = 1; //flag para indicar que o pacote é passado
        break;
       }
@@ -159,8 +159,8 @@ void loop(){
         { // se input contem markers
           if (startPos != -1)
             extractedStrings[count][j] = '\0';
-          count++;
-          j = 0;
+            count++;
+            j = 0;
         }
         extractedStrings[count][j++] = data[i];
         startPos = i;
@@ -185,11 +185,13 @@ void loop(){
     doc["Y"] = atof(extractedStrings[7] + 1);           // -- G
     doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
     doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
-    if(type_data == 1) doc["time"] = (extractedStrings[10] + 1);
+    if(type_data == 1) doc["time"] = (extractedStrings[10] + 1); // -- J
     // Serializar o objeto JSON em uma string
-    String jsonData;
+    if (incomingString.indexOf('\r') != -1) {
+    Serial.println("Caracteres \\r encontrados na incomingString.");
+    }
+    String jsonData = "";
     serializeJson(doc, jsonData);
-    Serial.println(atof(extractedStrings[10] + 1));
     Serial.println(jsonData);
     //-------------------------
     // confere conexão
@@ -228,3 +230,5 @@ void loop(){
     //-------------------------------------------
   }
 }
+
+
