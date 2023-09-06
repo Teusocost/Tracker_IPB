@@ -291,7 +291,7 @@ void toggleSerial_gps(bool enable){ //funcao ligar/desligar comunicao com LORA
 
 void keep_data(){
   Serial.println("dado que serão guardados");
-  sprintf(keep, "%s%i-%02i-%02iT%02i:%02i:%02iK\n",data,year,month,day,hour,minute,second);
+  sprintf(keep, "%s%i-%02i-%02iT%02i:%02i:%02iZ\n",data,year,month,day,hour,minute,second);
   Serial.println(keep);
   spiffsUtils.appendToFile("/dados.txt", keep); //grava um novo valor em SPIFF
   Serial.println("dados guardados!");

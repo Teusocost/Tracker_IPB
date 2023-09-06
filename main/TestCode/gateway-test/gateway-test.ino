@@ -139,11 +139,11 @@ void loop(){
     type_data = 0; //tipo de dado pre estabelecido
     int i, j = 0, startPos = -1, count = 0;
     //conferir se há T no vetor
-    char last_data[] = "T"; //Caracter para conferir se o dado é anterior  
+    char last_data[] = "Z"; //Caracter para conferir se o dado é anterior  
 
     for (i = 0;data[i] != '\0'; i++){
       if(strchr(last_data,data[i])){ // exsitir "T" no pacote o dado é passado
-       sprintf(markers, "ABCDEFGHIJK"); //atribui K como ultimo caracter (depois do horario)
+       sprintf(markers, "ABCDEFGHIJZ"); //atribui K como ultimo caracter (depois do horario)
        type_data = 1; //flag para indicar que o pacote é passado
        break;
       }
