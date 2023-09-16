@@ -19,7 +19,7 @@ float time_comp = 1000; // diferença entre segundo ao qual a mensagem "coord n 
 #define txLORA 26
 HardwareSerial lora(1);
 
-char LED_BUILTIN_MQTT_SEND = 2; //pisca led quando envia LoRa
+#define LED_BUILTIN_MQTT_SEND  2; //pisca led quando envia LoRa
 char end_to_send = '2';   // endereço do lora que vai receber esse pacote
 
 unsigned long time_geral; //variavel de controle - administrar tempo geral de tentativa
@@ -77,14 +77,18 @@ int Percentage;
 
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
+#define status_sensors 32
 void led_to_send();
 void toggleSerial_lora(bool enable);
 void toggleSerial_gps(bool enable);
 void keep_data();
 void configuration_to_confirmation();
 //---------------------------------------------------------
+
 void setup()
 {
+  //------------------------------------
+  
   // definições placa
   Serial.begin(115200);
   //------------------------------------
@@ -96,7 +100,9 @@ void setup()
   Wire.begin(SDA_PIN, SCL_PIN); // Inicializa a comunicação I2C
   //------------------------------------
   // pinos de leds
-  pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT);
+  pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); //indicar envio
+  pinMode(status_sensors, OUTPUT); //status dos sensores
+  digitalWrite(status_sensors,LOW); //tudo começa desligado
   //------------------------------------
   // Acelerômetro
   if (!accel.begin()){
@@ -112,6 +118,7 @@ void setup()
 }
 
 void loop(){
+  digitalWrite(status_sensors,HIGH); //Liga todos os sensores
   toggleSerial_lora(false);  //Comunicacao com LoRa Desligado
   toggleSerial_gps(true); //comunicacao GPS ligada
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
@@ -230,6 +237,7 @@ void loop(){
   //força o ESP32 entrar em modo SLEEP
   Serial.println(("sistema entrando em Deep Sleep"));
   Serial.println("=======Fim do processo========="); //debug serial.print
+  digitalWrite(status_sensors,LOW); //Desliga todos os sensores
   esp_deep_sleep_start();
 } // fim loop
 

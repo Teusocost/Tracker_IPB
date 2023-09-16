@@ -151,13 +151,13 @@ void loop(){
     if (client.publish("IPB/TESTE/TRACKER/01", jsonData.c_str())){ // encaminha json montado!
       Serial.println("Message published successfully");
       delay(200);
-      flag_mqtt = true;
+      flag_mqtt = true; //se foi publicado a mensagem de confirmação será enviada
     }
     else{
       Serial.println("Failed to publish message");
       //adicionar aqui o salvamento da mensagem
       delay(200);
-      flag_mqtt = false;
+      flag_mqtt = false; //se não foi publicado a mensagem de confirmação não será enviada
     }
     //-------------------------------------------
     void zerar_extractedStrings(); //para zerar a matriz de dados
