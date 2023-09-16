@@ -15,10 +15,12 @@ WiFiClient espClient;
 
 // Configurações do broker MQTT
 const char *mqttServer = "broker.mqtt-dashboard.com";
+bool flag_mqtt = false; //flag para garantir envio do pacote.
 const int mqttPort = 1883;
 const char *mqttUser = "USUARIO_DO_BROKER";
 const char *mqttPassword = "SENHA_DO_BROKER";
 PubSubClient client(espClient);
+
 //---------------------------------------------------------
 // Lora - Uart
 #include <HardwareSerial.h>
@@ -38,71 +40,8 @@ char *data; // para armazenar as informações que chegam
 char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 void zerar_extractedStrings(); //para zerar a matriz
 char type_data = 0; //tipo de dado que está chegando [0] - atual; [1] - dado guardado
+//---------------------------------------------------------
 
-void zerar_extractedStrings(){ //função para zerar string que armazena os dados
-    for (int i = 0; i < 12; ++i) {
-        for (int j = 0; j < 21; ++j) {
-            extractedStrings[i][j] = '\0';
-        }
-    }
-}
-
-bool serialEnabled = true; // Variável de controle para a comunicação serial
-
-void toggleSerial(bool enable)
-{
-  if (enable)
-  {
-    lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA);
-  }
-  else
-  {
-    lora.end();
-  }
-}
-
-
-void setup_wifi()
-{
-  delay(10);
-  Serial.println();
-  Serial.print("Conectando-se a ");
-  Serial.println(ssid);
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("Conectado à rede Wi-Fi");
-  Serial.println("Endereço IP: " + WiFi.localIP().toString());
-}
-
-void reconnect()
-{
-  while (!client.connected())
-  { 
-    client.setServer(mqttServer, mqttPort);
-    Serial.print("Conectando ao broker MQTT...");
-
-    //if (client.connect("ESP32Client", mqttUser, mqttPassword))
-    if (client.connect("ESP32Client")){
-      Serial.println("Conectado");
-      // client.subscribe("TOPICO_SUBSCRIBER");
-    }
-    else
-    {
-      Serial.print("Falha na conexão - Estado: ");
-      Serial.print(client.state());
-      Serial.println(" Tentando novamente em 5 segundos");
-      delay(5000);
-    }
-  }
-}
 
 void setup()
 {
@@ -208,13 +147,17 @@ void loop(){
 
     //-------------------------------------------
     // Publicar no tópico especificado
+    
     if (client.publish("IPB/TESTE/TRACKER/01", jsonData.c_str())){ // encaminha json montado!
       Serial.println("Message published successfully");
       delay(200);
+      flag_mqtt = true;
     }
     else{
       Serial.println("Failed to publish message");
+      //adicionar aqui o salvamento da mensagem
       delay(200);
+      flag_mqtt = false;
     }
     //-------------------------------------------
     void zerar_extractedStrings(); //para zerar a matriz de dados
@@ -222,13 +165,78 @@ void loop(){
     //-------------------------------------------
     toggleSerial(true); // Liga a comunicação serial novamente
     Serial.println("Serial ligada");
+    if (flag_mqtt){ //se o pacote foi publicado a mensagem de confirmação é enviada para o device
     char conf[30]; //vetor para empacote mensagem de confirmacao
     sprintf(conf, "AT+SEND=%c,2,OK",end_to_send);
     lora.println(conf); //manda a mensagem de confirmacao de recebimento
     Serial.println("mandando mensagem de confirmação..");
     Serial.println(lora.readString()); //lê a resposta do módulo
+    }
     //-------------------------------------------
   }
 }
 
+void zerar_extractedStrings(){ //função para zerar string que armazena os dados
+    for (int i = 0; i < 12; ++i) {
+        for (int j = 0; j < 21; ++j) {
+            extractedStrings[i][j] = '\0';
+        }
+    }
+}
 
+bool serialEnabled = true; // Variável de controle para a comunicação serial
+
+void toggleSerial(bool enable)
+{
+  if (enable)
+  {
+    lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA);
+  }
+  else
+  {
+    lora.end();
+  }
+}
+
+
+void setup_wifi()
+{
+  delay(10);
+  Serial.println();
+  Serial.print("Conectando-se a ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("Conectado à rede Wi-Fi");
+  Serial.println("Endereço IP: " + WiFi.localIP().toString());
+}
+
+void reconnect()
+{
+  while (!client.connected())
+  { 
+    client.setServer(mqttServer, mqttPort);
+    Serial.print("Conectando ao broker MQTT...");
+
+    //if (client.connect("ESP32Client", mqttUser, mqttPassword))
+    if (client.connect("ESP32Client")){
+      Serial.println("Conectado");
+      // client.subscribe("TOPICO_SUBSCRIBER");
+    }
+    else
+    {
+      Serial.print("Falha na conexão - Estado: ");
+      Serial.print(client.state());
+      Serial.println(" Tentando novamente em 1 segundos");
+      delay(1000);
+    }
+  }
+}
