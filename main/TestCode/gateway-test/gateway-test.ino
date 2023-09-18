@@ -163,14 +163,17 @@ void loop(){
     void zerar_extractedStrings(); //para zerar a matriz de dados
     Serial.println("string zerada");
     //-------------------------------------------
+    if (flag_mqtt){ //se o pacote foi publicado a mensagem de confirmação é enviada para o device
     toggleSerial(true); // Liga a comunicação serial novamente
     Serial.println("Serial ligada");
-    if (flag_mqtt){ //se o pacote foi publicado a mensagem de confirmação é enviada para o device
     char conf[30]; //vetor para empacote mensagem de confirmacao
     sprintf(conf, "AT+SEND=%c,2,OK",end_to_send);
     lora.println(conf); //manda a mensagem de confirmacao de recebimento
     Serial.println("mandando mensagem de confirmação..");
     Serial.println(lora.readString()); //lê a resposta do módulo
+    }
+    else{
+    toggleSerial(true); // Liga a comunicação serial novamente
     }
     //-------------------------------------------
   }

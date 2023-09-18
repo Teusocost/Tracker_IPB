@@ -19,7 +19,7 @@ float time_comp = 1000; // diferença entre segundo ao qual a mensagem "coord n 
 #define txLORA 26
 HardwareSerial lora(1);
 
-#define LED_BUILTIN_MQTT_SEND  2; //pisca led quando envia LoRa
+#define LED_BUILTIN_MQTT_SEND  2 //pisca led quando envia LoRa
 char end_to_send = '2';   // endereço do lora que vai receber esse pacote
 
 unsigned long time_geral; //variavel de controle - administrar tempo geral de tentativa
@@ -77,7 +77,9 @@ int Percentage;
 
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
-#define status_sensors 32
+#define status_sensor_lora 32
+#define status_sensors 5
+#define status_battery 4
 void led_to_send();
 void toggleSerial_lora(bool enable);
 void toggleSerial_gps(bool enable);
@@ -87,22 +89,25 @@ void configuration_to_confirmation();
 
 void setup()
 {
-  //------------------------------------
+  // pinos de leds
+  pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); //indicar envio
+  pinMode(status_sensor_lora, OUTPUT); //status antena lora
+  pinMode(status_sensors, OUTPUT); //status sensores
+  pinMode(status_sensors, OUTPUT); //status bateria
+  digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
   
+  delay(10);
+  //------------------------------------
   // definições placa
   Serial.begin(115200);
   //------------------------------------
+  //------------------------------------
   // gps definições
-  gpsSerial.begin(9600, SERIAL_8N1, rxGPS, txGPS); // connect gps sensor
+  toggleSerial_gps(true);
   lat = 0; lon = 0;
   //------------------------------------
   // sht21 definições
   Wire.begin(SDA_PIN, SCL_PIN); // Inicializa a comunicação I2C
-  //------------------------------------
-  // pinos de leds
-  pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); //indicar envio
-  pinMode(status_sensors, OUTPUT); //status dos sensores
-  digitalWrite(status_sensors,LOW); //tudo começa desligado
   //------------------------------------
   // Acelerômetro
   if (!accel.begin()){
@@ -112,21 +117,26 @@ void setup()
   }
   //------------------------------------
   // LoRa
-  lora.begin(115200, SERIAL_8N1, rxLORA, txLORA); // connect gps sensor
+  toggleSerial_lora(true); //comunicacao GPS ligada
+  digitalWrite(status_sensor_lora,HIGH);
+  delay(10);
   lora.println("AT+ADDRESS?"); // para conferir o endereco do modulo
   Serial.println(lora.readString()); // para conferir o endereco do modulo
+  digitalWrite(status_sensor_lora,LOW);
 }
 
 void loop(){
-  digitalWrite(status_sensors,HIGH); //Liga todos os sensores
-  toggleSerial_lora(false);  //Comunicacao com LoRa Desligado
-  toggleSerial_gps(true); //comunicacao GPS ligada
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
   Serial.println("=======ESP INICIADO========="); //debug serial.print
+  digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
+  toggleSerial_lora(false);  //Comunicacao com LoRa Desligado
+  toggleSerial_gps(true); //comunicacao GPS ligada
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
   //------------------------------------
   // status da bateria (funççao externa)
+  digitalWrite(status_battery,HIGH); //liga sistema leitura baterias
   batterystatus(Voltage, Percentage);
+  digitalWrite(status_battery,LOW); //desliga sistema leitura baterias
   //------------------------------------
   // leitura de temperatura e humidade SHT21
   readSHT21Data(temperature, humidity); // Chama a função para ler os dados do sensor SHT21       
@@ -152,7 +162,7 @@ void loop(){
         }
       }
       read_all_data_gps(); //Se não foi necessário entrar no laço ele armazena os dados de qualquer maneira!
-      toggleSerial_gps(true); //comunicacao GPS ligada
+      toggleSerial_gps(false); //comunicacao GPS desligada
       break;
       //-----------------------------------
     }
@@ -160,6 +170,7 @@ void loop(){
   //-----------------------------------
   //organizar e enviar LoRa - tentativa atual
   Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
+  digitalWrite(status_sensor_lora,HIGH); //liga LoRa
   sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, event.acceleration.x, event.acceleration.y, event.acceleration.z, Percentage); //atribui e organiza as informações em data
   //o caractere J indica o fim da mensagem
   requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
@@ -211,8 +222,8 @@ void loop(){
             Serial.println("não há nada para enviar");
           }
           else{
-            Serial.println("Último valor gravado:");
             Serial.println("=======Enviar dados guardados========="); //debug serial.print
+            Serial.println("Último valor gravado:");
             Serial.println(lastValue); //imprime o ultimo valor gravado
             flag_to_delete_last_data = true; //flag para indicar que dado pode ser apagado depois de confirmacao de envio
             char lastvalue_char[80]; //vetor que vai receber o ultimo valor guardado (string -> char)
@@ -234,10 +245,12 @@ void loop(){
     }
   }
   //-----------------------------------
+  digitalWrite(status_sensor_lora,LOW); //desliga LoRa
+  digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345)
   //força o ESP32 entrar em modo SLEEP
-  Serial.println(("sistema entrando em Deep Sleep"));
+  Serial.println(("Sistema entrando em Deep Sleep"));
+  Serial.println("Desligando todos os sensores");
   Serial.println("=======Fim do processo========="); //debug serial.print
-  digitalWrite(status_sensors,LOW); //Desliga todos os sensores
   esp_deep_sleep_start();
 } // fim loop
 
@@ -294,6 +307,7 @@ void toggleSerial_gps(bool enable){ //funcao ligar/desligar comunicao com LORA
   }
   else{
     gpsSerial.end();
+
   }
 }
 
