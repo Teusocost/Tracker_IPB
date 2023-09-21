@@ -10,8 +10,8 @@ WiFiClient espClient;
 // const char* ssid = "iPhone de Mateus";
 // const char* password = "12345678";
 
-// const char* ssid = "agents";
-// const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
+ //const char* ssid = "agents";
+ //const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
 
 // Configurações do broker MQTT
 const char *mqttServer = "broker.mqtt-dashboard.com";
