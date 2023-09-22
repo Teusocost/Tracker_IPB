@@ -193,7 +193,7 @@ void loop(){
     //--------------------------------
     //Confere se confirmação chegou
     toggleSerial_lora(true); // liga serial
-    delay(10);
+    //delay(10);
     incomingString = lora.readString(); //lê a resposta do módulo
     toggleSerial_lora(false); //desliga serial
     //------------------------------
