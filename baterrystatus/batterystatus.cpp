@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "batterystatus.h"
 
-#define analogInPin 15 // porta que vai ler o nível da bateria
+#define analogInPin 33 // porta que vai ler o nível da bateria
 
 int sensorValue;
 float calibration = 0.36; // Check Battery voltage using multimeter & add/subtract the value
