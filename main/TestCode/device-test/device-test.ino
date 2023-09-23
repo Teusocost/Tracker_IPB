@@ -26,8 +26,8 @@ unsigned long time_geral; //variavel de controle - administrar tempo geral de te
 int tent = 1;     //variavel de controle - n de tentativas
 float time_reenv; //variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
-unsigned int time_to_resend = 5000; // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = 11000; //Tempo em ms de tentativas
+unsigned int time_to_resend = 10000; // tempo em ms para nova tentativa de envio LoRa
+unsigned int time_finish_resend = 22000; //Tempo em ms de tentativas
 
 int requiredBufferSize = 0; // quantidade de bytes que serão enviados (variavel)
 char mensagem[120]; //Vetor para mensagem completa
@@ -74,7 +74,7 @@ int Percentage;
 // fator de conversão de microsegundos para segundos
 #define uS_TO_S_FACTOR 1000000
 // tempo que o ESP32 ficará em modo sleep (em segundos)
-#define TIME_TO_SLEEP 10
+#define TIME_TO_SLEEP 20
 
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
@@ -91,7 +91,10 @@ void configuration_to_confirmation();
 
 void setup()
 {
-  // pinos de leds
+  //------------------------------------
+  // definições placa
+  Serial.begin(115200);
+  // pinos de leds/transistores/leituras de subsistemas
   pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); //indicar envio
   pinMode(status_sensor_lora, OUTPUT); //status antena lora
   pinMode(status_sensors, OUTPUT); //status sensores
@@ -99,14 +102,10 @@ void setup()
   pinMode(status_gps, OUTPUT); //status bateria
   digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
   digitalWrite(status_gps,HIGH); //já liga o gps
-  delay(10);
-  //------------------------------------
-  // definições placa
-  Serial.begin(115200);
   //------------------------------------
   //------------------------------------
   // gps definições
-  toggleSerial_gps(true);
+  toggleSerial_gps(true); //sistema ja liga gps
   lat = 0; lon = 0;
   //------------------------------------
   // sht21 definições
@@ -131,21 +130,7 @@ void setup()
 void loop(){
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
   Serial.println("=======ESP INICIADO========="); //debug serial.print
-  digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
-  toggleSerial_lora(false);  //Comunicacao com LoRa Desligado
-  toggleSerial_gps(true); //comunicacao GPS ligada
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
-  //------------------------------------
-  // status da bateria (funççao externa)
-  digitalWrite(status_battery,HIGH); //liga sistema leitura baterias
-  batterystatus(Voltage, Percentage);
-  digitalWrite(status_battery,LOW); //desliga sistema leitura baterias
-  //------------------------------------
-  // leitura de temperatura e humidade SHT21
-  readSHT21Data(temperature, humidity); // Chama a função para ler os dados do sensor SHT21       
-  sensors_event_t event;
-  accel.getEvent(&event);
-  //------------------------------------
   // Capturando dados GPS
   unsigned long now = millis(); // iniciando função para contagem
   while (gpsSerial.available()){ // Entra no laço se comunicação está ok
@@ -170,11 +155,23 @@ void loop(){
       //-----------------------------------
     }
   }
+  digitalWrite(status_gps,LOW); //desliga gps
+  //------------------------------------
+  // status da bateria (funççao externa)
+  digitalWrite(status_battery,HIGH); //liga sistema leitura baterias
+  batterystatus(Voltage, Percentage);
+  digitalWrite(status_battery,LOW); //desliga sistema leitura baterias
+  //------------------------------------
+  // leitura de temperatura e humidade SHT21
+  readSHT21Data(temperature, humidity); // Chama a função para ler os dados do sensor SHT21       
+  sensors_event_t event;
+  accel.getEvent(&event);
+  //------------------------------------
   x = event.acceleration.x; //alecerometro em x
   y = event.acceleration.y; //alecerometro em y
   z = event.acceleration.z; //alecerometro em z
   digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345)
-  digitalWrite(status_gps,LOW); //desliga gps
+  
   //-----------------------------------
   //organizar e enviar LoRa - tentativa atual
   Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
@@ -186,8 +183,8 @@ void loop(){
   reen_data(); //funcao para enviar dados
   //----------------------------------------
   //protocolo de confirmação de envio
+  Serial.println("==========Aguardar confirmacao========="); //debug serial.print
   configuration_to_confirmation();
-  Serial.println("=======Aguardar confirmacao========="); //debug serial.print
   wait_confirmation:
   while(-1){ // laco para receber confirmação
     //--------------------------------
@@ -263,7 +260,7 @@ void loop(){
 } // fim loop
 
 void configuration_to_confirmation(){
-  Serial.println("Aguardando confirmação (30 segundos)");
+  Serial.println("Aguardando confirmação");
   time_geral = millis(); //administrar tempo geral de tentativa
   time_reenv = millis()+time_to_resend; //adminstrar tempo de reenvio
   tent = 1; //n de tentativas

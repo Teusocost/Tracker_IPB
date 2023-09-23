@@ -41,7 +41,8 @@ char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente par
 void zerar_extractedStrings(); //para zerar a matriz
 char type_data = 0; //tipo de dado que está chegando [0] - atual; [1] - dado guardado
 //---------------------------------------------------------
-
+// outos pinos do sistema
+#define led_to_rec 21
 
 void setup()
 {
@@ -53,6 +54,10 @@ void setup()
   // definições WIFI/MQTT
   setup_wifi();
   client.setServer(mqttServer, mqttPort);
+  //------------------------------------
+  // outros pinos
+  pinMode(led_to_rec,OUTPUT);
+  digitalWrite(led_to_rec, LOW);//Desliga led
 }
 
 void loop(){
@@ -171,12 +176,19 @@ void loop(){
     lora.println(conf); //manda a mensagem de confirmacao de recebimento
     Serial.println("mandando mensagem de confirmação..");
     Serial.println(lora.readString()); //lê a resposta do módulo
+    led_to_receive();
     }
     else{
     toggleSerial(true); // Liga a comunicação serial novamente
     }
     //-------------------------------------------
   }
+}
+
+void led_to_receive(){
+  digitalWrite(led_to_rec, HIGH); //Liga Led
+  delay(200); //tempo de led ligado
+  digitalWrite(led_to_rec, LOW);//Desliga led
 }
 
 void zerar_extractedStrings(){ //função para zerar string que armazena os dados
