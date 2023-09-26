@@ -8,11 +8,9 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
+int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 4; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
-float time_wait_gps = 30000; // tempo em ms que espera o GPS receber coordenadas
-float time_control = 0; //para controlar o tempo
-float time_comp = 1000; // diferença entre segundo ao qual a mensagem "." será mostrado
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -26,8 +24,8 @@ unsigned long time_geral; //variavel de controle - administrar tempo geral de te
 int tent = 1;     //variavel de controle - n de tentativas
 float time_reenv; //variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
-unsigned int time_to_resend = 10000; // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = 22000; //Tempo em ms de tentativas
+unsigned int time_to_resend = 5000; // tempo em ms para nova tentativa de envio LoRa
+unsigned int time_finish_resend = 11000; //Tempo em ms de tentativas
 
 int requiredBufferSize = 0; // quantidade de bytes que serão enviados (variavel)
 char mensagem[120]; //Vetor para mensagem completa
@@ -74,14 +72,13 @@ int Percentage;
 // fator de conversão de microsegundos para segundos
 #define uS_TO_S_FACTOR 1000000
 // tempo que o ESP32 ficará em modo sleep (em segundos)
-#define TIME_TO_SLEEP 20
+#define TIME_TO_SLEEP 10
 
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
 #define status_sensor_lora 32
 #define status_sensors 18 //ADXL345 e DHT21
 #define status_battery 4
-#define status_gps 5
 void led_to_send();
 void toggleSerial_lora(bool enable);
 void toggleSerial_gps(bool enable);
@@ -99,13 +96,14 @@ void setup()
   pinMode(status_sensor_lora, OUTPUT); //status antena lora
   pinMode(status_sensors, OUTPUT); //status sensores
   pinMode(status_battery, OUTPUT); //status bateria
-  pinMode(status_gps, OUTPUT); //status bateria
   digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
-  digitalWrite(status_gps,HIGH); //já liga o gps
   //------------------------------------
   //------------------------------------
   // gps definições
   toggleSerial_gps(true); //sistema ja liga gps
+  delay(25);
+  Serial.println("ligando o gps em modo hot");
+  gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); //acorda o gps em modo hot
   lat = 0; lon = 0;
   //------------------------------------
   // sht21 definições
@@ -117,11 +115,13 @@ void setup()
     Serial.println("Resentando");
     ESP.restart(); //Função para resetar ESP
   }
+  digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
+
   //------------------------------------
   // LoRa
   toggleSerial_lora(true); //comunicacao GPS ligada
   digitalWrite(status_sensor_lora,HIGH);
-  delay(10);
+  delay(100);
   lora.println("AT+ADDRESS?"); // para conferir o endereco do modulo
   Serial.println(lora.readString()); // para conferir o endereco do modulo
   digitalWrite(status_sensor_lora,LOW);
@@ -132,30 +132,30 @@ void loop(){
   Serial.println("=======ESP INICIADO========="); //debug serial.print
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
   // Capturando dados GPS
+  Serial.println("Processando/aguardando dados GPS");
+
   unsigned long now = millis(); // iniciando função para contagem
   while (gpsSerial.available()){ // Entra no laço se comunicação está ok
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
-      gps.encode(gpsSerial.read()); // processar dados brutos
-      Serial.println("Processando/aguardando dados GPS");
-      while(lat == 0 && lon == 0 ){ // loop para aguardar latitude e longitude
-        gps.encode(gpsSerial.read()); //confere se dados brutos chegaram e processa
-        read_all_data_gps(); //lê todos os dados
-        if(millis() - time_control >= time_comp){ // condição para imprimir status (aguardando)
-          time_control = millis();
-          Serial.print(".");
-          if ((millis() - now) >= time_wait_gps) { // Se não encontrar lat e lon os dados são enviados sem esses
-            Serial.println("\nCoordenadas não encontradas"); // informa essa condição
-            break;
-          }
-        }
+      gps.encode(gpsSerial.read()); //interpreta dados brutos
+      read_all_data_gps(); //lê todos os dados
+      printallvalues();
+      Serial.println("----------------------");
+      if(lat != 0 && lon != 0 ){
+        break; // loop para aguardar latitude e longitude
       }
-      read_all_data_gps(); //Se não foi necessário entrar no laço ele armazena os dados de qualquer maneira!
-      toggleSerial_gps(false); //comunicacao GPS desligada
-      break;
-      //-----------------------------------
+      if(counter_gps_cicle >= n_cicles_gps ){
+        Serial.println("\nCoordenadas não encontradas"); // informa essa condição
+        break;
+      }
+      counter_gps_cicle++;
+      delay(delay_read_gps);
     }
   }
-  digitalWrite(status_gps,LOW); //desliga gps
+  Serial.println("colocando o gps em standby");
+  gpsSerial.print("$PMTK161,0*28<CR><LF>\r\n"); //coloca o gps em standby
+  //delay(100); //aguarda confirmação de standby
+  //toggleSerial_gps(false); //comunicacao GPS desligada
   //------------------------------------
   // status da bateria (funççao externa)
   digitalWrite(status_battery,HIGH); //liga sistema leitura baterias
@@ -163,6 +163,7 @@ void loop(){
   digitalWrite(status_battery,LOW); //desliga sistema leitura baterias
   //------------------------------------
   // leitura de temperatura e humidade SHT21
+  digitalWrite(status_sensors,HIGH); //desliga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
   readSHT21Data(temperature, humidity); // Chama a função para ler os dados do sensor SHT21       
   sensors_event_t event;
   accel.getEvent(&event);
@@ -337,4 +338,23 @@ void read_all_data_gps(){
   hour = gps.time.hour(); //hora
   minute = gps.time.minute(); //minuto
   second = gps.time.second(); //segundo
+}
+
+void printallvalues(){
+  Serial.print("LAT: ");
+  Serial.println(lat, 6);
+  Serial.print("LONG: ");
+  Serial.println(lon, 6);
+  Serial.print("SPEED: ");
+  Serial.println(vel);
+
+  Serial.print("Date: ");
+  Serial.print(day); Serial.print("/");
+  Serial.print(month); Serial.print("/");
+  Serial.println(year);
+
+  Serial.print("Hour: ");
+  Serial.print(hour); Serial.print(":");
+  Serial.print(minute); Serial.print(":");
+  Serial.println(second);
 }

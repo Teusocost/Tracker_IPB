@@ -4,7 +4,7 @@
 #define analogInPin 33 // porta que vai ler o nível da bateria
 
 int sensorValue;
-float calibration = 0.36; // Check Battery voltage using multimeter & add/subtract the value
+float calibration = 0.44; // Check Battery voltage using multimeter & add/subtract the value
 
 
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max)
@@ -17,7 +17,7 @@ void batterystatus(float &Voltage, int &Percentage)
     sensorValue = analogRead(analogInPin);
     Voltage = (((sensorValue * 3.3) / 4096) * 2 + calibration); // multiply by two as voltage divider network is 100K & 100K Resistor
 
-    Percentage = mapfloat(Voltage, 2.8, 4.2, 0, 100); // 2.8V as Battery Cut off Voltage & 4.2V as Maximum Voltage
+    Percentage = mapfloat(Voltage, 2.65, 4.2, 0, 100); // 2.8V as Battery Cut off Voltage & 4.2V as Maximum Voltage
 
     if (Percentage >= 100)
     {
