@@ -8,7 +8,7 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 4; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
+int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 6; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
@@ -115,7 +115,6 @@ void setup()
     Serial.println("Resentando");
     ESP.restart(); //Função para resetar ESP
   }
-  digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
 
   //------------------------------------
   // LoRa
@@ -158,12 +157,12 @@ void loop(){
   //toggleSerial_gps(false); //comunicacao GPS desligada
   //------------------------------------
   // status da bateria (funççao externa)
+
   digitalWrite(status_battery,HIGH); //liga sistema leitura baterias
   batterystatus(Voltage, Percentage);
   digitalWrite(status_battery,LOW); //desliga sistema leitura baterias
   //------------------------------------
   // leitura de temperatura e humidade SHT21
-  digitalWrite(status_sensors,HIGH); //desliga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
   readSHT21Data(temperature, humidity); // Chama a função para ler os dados do sensor SHT21       
   sensors_event_t event;
   accel.getEvent(&event);
