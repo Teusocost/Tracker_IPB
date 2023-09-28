@@ -145,16 +145,15 @@ void loop(){
       }
       if(counter_gps_cicle >= n_cicles_gps ){
         Serial.println("\nCoordenadas não encontradas"); // informa essa condição
+        gps_standby();
+        goto without_coord;
         break;
       }
       counter_gps_cicle++;
       delay(delay_read_gps);
     }
   }
-  Serial.println("colocando o gps em standby");
-  gpsSerial.print("$PMTK161,0*28<CR><LF>\r\n"); //coloca o gps em standby
-  //delay(100); //aguarda confirmação de standby
-  //toggleSerial_gps(false); //comunicacao GPS desligada
+  gps_standby(); //coloca o gps em standby
   //------------------------------------
   // status da bateria (funççao externa)
 
@@ -230,6 +229,7 @@ void loop(){
             Serial.println("=======Enviar dados guardados========="); //debug serial.print
             Serial.println("Último valor gravado:");
             Serial.println(lastValue); //imprime o ultimo valor gravado
+            delay(1000); //delay para debug no gatway
             flag_to_delete_last_data = true; //flag para indicar que dado pode ser apagado depois de confirmacao de envio
             char lastvalue_char[80]; //vetor que vai receber o ultimo valor guardado (string -> char)
             lastValue.toCharArray(lastvalue_char, 80); //método transforma string em char
@@ -253,11 +253,17 @@ void loop(){
   digitalWrite(status_sensor_lora,LOW); //desliga LoRa
 
   //força o ESP32 entrar em modo SLEEP
+  without_coord: //sistema pula para ca se não apresentar coordenadas
   Serial.println(("Sistema entrando em Deep Sleep"));
   Serial.println("Desligando todos os sensores");
   Serial.println("=======Fim do processo========="); //debug serial.print
   esp_deep_sleep_start();
 } // fim loop
+
+void gps_standby(){
+  Serial.println("colocando o gps em standby");
+  gpsSerial.print("$PMTK161,0*28<CR><LF>\r\n"); //coloca o gps em standby
+}
 
 void configuration_to_confirmation(){
   Serial.println("Aguardando confirmação");
