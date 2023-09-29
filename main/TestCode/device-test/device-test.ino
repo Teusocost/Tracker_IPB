@@ -145,8 +145,6 @@ void loop(){
       }
       if(counter_gps_cicle >= n_cicles_gps ){
         Serial.println("\nCoordenadas não encontradas"); // informa essa condição
-        gps_standby();
-        goto without_coord;
         break;
       }
       counter_gps_cicle++;
@@ -201,9 +199,20 @@ void loop(){
     }
     if(millis()-time_geral >= time_finish_resend){ //fim do laço de tentativas
       Serial.println("fim de tentativas");
-      keep_data(); //função para guardar dados em SPIFFS
-      Serial.println("Informação guardada");
-      break; //fecha laço While
+      if(lat != 0 && lon != 0 && flag_to_delete_last_data == false){
+        keep_data(); //função para guardar dados em SPIFFS
+        Serial.println("pacote de dados guardado");
+        break; //fecha laço While
+      }
+      else 
+      if(flag_to_delete_last_data == true){
+        Serial.println("pacote de dados retorna para memoria");
+        break;
+      }
+      else{
+        Serial.println("pacote nao guardado (lat e lon off)");
+        break;
+      }
     }
     if(incomingString != NULL){ // se chegou algum dado
       Serial.println(incomingString); // mostra dado
@@ -237,7 +246,7 @@ void loop(){
             sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,lastvalue_char); // junta as informações em "mensagem"
             reen_data(); //funcao para enviar dados
             configuration_to_confirmation(); //atualiza variaiveis de controle de tempo para aguardar confirmacao
-            incomingString = "NULL"; //apaga ultimo dado recebido em serial
+            incomingString = "NULL"; //apaga ultimo dado recebido em serial 
             goto wait_confirmation; //retorna para receber confirmação de envio
           }
         }

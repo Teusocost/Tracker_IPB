@@ -16,7 +16,7 @@ void loop() {
 }
 
 void listFiles() {
-    File root = SPIFFS.open("/");s
+    File root = SPIFFS.open("/");
     File file = root.openNextFile();
     
     if (!file) {

@@ -4,14 +4,14 @@
 #include <ArduinoJson.h>
 
 // Configurações da rede Wi-Fi
-//const char *ssid = "NOS-2E40";
-//const char *password = "2TJA5RZ9";
+const char *ssid = "NOS-2E40";
+const char *password = "2TJA5RZ9";
 WiFiClient espClient;
  //const char* ssid = "iPhone de Mateus";
  //const char* password = "12345678";
 
- const char* ssid = "agents";
- const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
+ //const char* ssid = "agents";
+ //const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
 
 // Configurações do broker MQTT
 const char *mqttServer = "broker.mqtt-dashboard.com";
@@ -117,6 +117,12 @@ void loop(){
     for (int i = 0; i < count-1; i++){ // -1 por que J não conta
     printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
     }
+    //------------------------------------
+    // imprimir nível da conexão com Wifi
+    int32_t rssi = WiFi.RSSI();
+    Serial.print("Nível de sinal Wi-Fi: ");
+    Serial.print(rssi);
+    Serial.println(" dBm");
     //------------------------------------------------------
     DynamicJsonDocument doc(256); // Tamanho do buffer JSON
     
@@ -130,6 +136,7 @@ void loop(){
     doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
     doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
     if(type_data == 1) doc["time"] = (extractedStrings[10] + 1); // -- J
+    doc["RSSI_WIFI"] = rssi;
     // Serializar o objeto JSON em uma string
     if (incomingString.indexOf('\r') != -1) {
     Serial.println("Caracteres \\r encontrados na incomingString.");
@@ -137,22 +144,14 @@ void loop(){
     String jsonData = "";
     serializeJson(doc, jsonData);
     Serial.println(jsonData);
-    //-------------------------
+    //---------------------------
     // confere conexão
     if (!client.connected()){
       reconnect();
     }
     client.loop();
-    //------------------------------------
-    // imprimir nível da conexão com Wifi
-    int32_t rssi = WiFi.RSSI();
-    Serial.print("Nível de sinal Wi-Fi: ");
-    Serial.print(rssi);
-    Serial.println(" dBm");
-
     //-------------------------------------------
     // Publicar no tópico especificado
-    
     if (client.publish("IPB/TESTE/TRACKER/01", jsonData.c_str())){ // encaminha json montado!
       Serial.println("Message published successfully");
       delay(200);
