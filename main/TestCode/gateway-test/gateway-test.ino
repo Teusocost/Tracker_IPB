@@ -76,7 +76,7 @@ void loop(){
     data = strtok(dataArray, ",");
     data = strtok(NULL, ",");
     data = strtok(NULL, ",");
-    RSSI_LoRA = &*data;
+    RSSI_LoRA = &*data; // para pegar o RSSI do sinal lora
     RSSI_LoRA = strtok(NULL, ",");
     // Serial.println(incomingString);
     Serial.println(data);
