@@ -20,6 +20,7 @@ const int mqttPort = 1883;
 const char *mqttUser = "USUARIO_DO_BROKER";
 const char *mqttPassword = "SENHA_DO_BROKER";
 PubSubClient client(espClient);
+char *RSSI_LoRA;
 
 //---------------------------------------------------------
 // Lora - Uart
@@ -75,6 +76,8 @@ void loop(){
     data = strtok(dataArray, ",");
     data = strtok(NULL, ",");
     data = strtok(NULL, ",");
+    RSSI_LoRA = &*data;
+    RSSI_LoRA = strtok(NULL, ",");
     // Serial.println(incomingString);
     Serial.println(data);
   
@@ -114,9 +117,9 @@ void loop(){
         extractedStrings[count][j++] = data[i];
       }
     }
-    for (int i = 0; i < count-1; i++){ // -1 por que J não conta
-    printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
-    }
+    //for (int i = 0; i < count-1; i++){ // -1 por que J não conta
+    //printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
+    //}
     //------------------------------------
     // imprimir nível da conexão com Wifi
     int32_t rssi = WiFi.RSSI();
@@ -136,6 +139,7 @@ void loop(){
     doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
     doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
     if(type_data == 1) doc["time"] = (extractedStrings[10] + 1); // -- J
+    doc["RSSI_LoRa"] = RSSI_LoRA;
     doc["RSSI_WIFI"] = rssi;
     // Serializar o objeto JSON em uma string
     if (incomingString.indexOf('\r') != -1) {

@@ -201,16 +201,19 @@ void loop(){
       Serial.println("fim de tentativas");
       if(lat != 0 && lon != 0 && flag_to_delete_last_data == false){
         keep_data(); //função para guardar dados em SPIFFS
+        Show_SPIFFS();
         Serial.println("pacote de dados guardado");
         break; //fecha laço While
       }
       else 
       if(flag_to_delete_last_data == true){
         Serial.println("pacote de dados retorna para memoria");
+        Show_SPIFFS();
         break;
       }
       else{
         Serial.println("pacote nao guardado (lat e lon off)");
+        Show_SPIFFS();
         break;
       }
     }
@@ -336,6 +339,9 @@ void keep_data(){
   sprintf(keep, "%s%i-%02i-%02iT%02i:%02i:%02iZK\n",data,year,month,day,hour,minute,second);
   Serial.println(keep);
   spiffsUtils.appendToFile("/dados.txt", keep); //grava um novo valor em SPIFF
+}
+
+void Show_SPIFFS(){
   Serial.println("dados guardados!");
   Serial.println("Todos os dados:");
   spiffsUtils.listFiles();
