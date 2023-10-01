@@ -7,6 +7,7 @@
 const char *ssid = "NOS-2E40";
 const char *password = "2TJA5RZ9";
 WiFiClient espClient;
+int32_t rssi; // variavel para recever sinal RSSI wifi
  //const char* ssid = "iPhone de Mateus";
  //const char* password = "12345678";
 
@@ -22,6 +23,8 @@ const char *mqttPassword = "SENHA_DO_BROKER";
 PubSubClient client(espClient);
 char *RSSI_LoRA;
 
+String jsonData = ""; //para receber json
+DynamicJsonDocument doc(256); // Tamanho do buffer JSON
 //---------------------------------------------------------
 // Lora - Uart
 #include <HardwareSerial.h>
@@ -39,6 +42,8 @@ char markers[12];// = "ABCDEFGHIJK";  // J indica o fim da string
 
 char *data; // para armazenar as informações que chegam
 char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
+char last_data[] = "Z"; //Caracter para conferir se o pacote é da memoria (UTC Time Format has a Z)  
+char find_gatway[] = "HELLO"; //mensagem que device envia para encontrar gatway
 void zerar_extractedStrings(); //para zerar a matriz
 char type_data = 0; //tipo de dado que está chegando [0] - atual; [1] - dado guardado
 //---------------------------------------------------------
@@ -86,9 +91,12 @@ void loop(){
     type_data = 0; //tipo de dado pre estabelecido
     int i, j = 0, startPos = -1, count = 0;
     //conferir se há T no vetor
-    char last_data[] = "Z"; //Caracter para conferir se o dado é anterior  
 
     for (i = 0;data[i] != '\0'; i++){
+      if (strchr(find_gatway,data[i])){ //se device estver procurando o gatwat
+        send_confirmation(); //envia confirmação
+        goto the_end; //termina loop
+      }
       if(strchr(last_data,data[i])){ // exsitir "Z" no pacote o dado é passado
        sprintf(markers, "ABCDEFGHIJZK"); //atribui K como ultimo caracter (depois do horario)
        type_data = 1; //flag para indicar que o pacote é passado
@@ -122,13 +130,11 @@ void loop(){
     //}
     //------------------------------------
     // imprimir nível da conexão com Wifi
-    int32_t rssi = WiFi.RSSI();
+    rssi = WiFi.RSSI();
     Serial.print("Nível de sinal Wi-Fi: ");
     Serial.print(rssi);
     Serial.println(" dBm");
     //------------------------------------------------------
-    DynamicJsonDocument doc(256); // Tamanho do buffer JSON
-    
     doc["latitude"] = atof(extractedStrings[1] + 1);    // -- A
     doc["longitude"] = atof(extractedStrings[2] + 1);   // -- B
     doc["vel"] = atof(extractedStrings[3] + 1);         // -- C
@@ -145,7 +151,7 @@ void loop(){
     if (incomingString.indexOf('\r') != -1) {
     Serial.println("Caracteres \\r encontrados na incomingString.");
     }
-    String jsonData = "";
+    jsonData = "";
     serializeJson(doc, jsonData);
     Serial.println(jsonData);
     //---------------------------
@@ -171,21 +177,26 @@ void loop(){
     void zerar_extractedStrings(); //para zerar a matriz de dados
     Serial.println("string zerada");
     //-------------------------------------------
-    if (flag_mqtt){ //se o pacote foi publicado a mensagem de confirmação é enviada para o device
-    toggleSerial(true); // Liga a comunicação serial novamente
-    Serial.println("Serial ligada");
-    char conf[30]; //vetor para empacote mensagem de confirmacao
-    sprintf(conf, "AT+SEND=%c,2,OK",end_to_send);
-    lora.println(conf); //manda a mensagem de confirmacao de recebimento
-    Serial.println("mandando mensagem de confirmação..");
-    Serial.println(lora.readString()); //lê a resposta do módulo
-    led_to_receive();
+    the_end: // para usar goto se necessário
+    if (flag_mqtt){
+      send_confirmation(); //se o pacote foi publicado a mensagem de confirmação é enviada para o device
     }
     else{
     toggleSerial(true); // Liga a comunicação serial novamente
     }
     //-------------------------------------------
   }
+}
+
+void send_confirmation(){
+  toggleSerial(true); // Liga a comunicação serial novamente
+  Serial.println("Serial ligada");
+  char conf[30]; //vetor para empacote mensagem de confirmacao
+  sprintf(conf, "AT+SEND=%c,2,OK",end_to_send);
+  lora.println(conf); //manda a mensagem de confirmacao de recebimento
+  Serial.println("mandando mensagem de confirmação..");
+  Serial.println(lora.readString()); //lê a resposta do módulo
+  led_to_receive();
 }
 
 void led_to_receive(){
