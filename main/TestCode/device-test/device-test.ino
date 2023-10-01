@@ -97,7 +97,7 @@ void setup()
   pinMode(status_sensor_lora, OUTPUT); //status antena lora
   pinMode(status_sensors, OUTPUT); //status sensores
   pinMode(status_battery, OUTPUT); //status bateria
-  digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, L80 ADXL345) (permancem sempre ligados)
+  digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, ADXL345) (permancem sempre ligados)
   //------------------------------------
   //------------------------------------
   // gps definições
@@ -146,7 +146,9 @@ void loop(){
       }
       if(counter_gps_cicle >= n_cicles_gps ){
         Serial.println("\nCoordenadas não encontradas"); // informa essa condição
+        digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345) (NÃO SERÃO UTILIZADOS)
         gps_standby();
+        goto without_lat_lon; //programa pula envio ou não de pacote antigos 
         break;
       }
       counter_gps_cicle++;
@@ -172,17 +174,17 @@ void loop(){
   digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345)
   //-----------------------------------
   //organizar e enviar LoRa - tentativa atua
-  if(lat != 0 && lon != 0){ //se existir lat e lon empacotar informações atuais para enviar
-    Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
-    digitalWrite(status_sensor_lora,HIGH); //liga LoRa
-    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
-    //o caractere J indica o fim da mensagem
-    requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
-    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
-    reen_data(); //funcao para enviar dados
-  } 
-  else 
-  if(spiffsUtils.readLastValue("/dados.txt") != NULL){ // se não houver lat e lon atuais o programa apenas confere se há pacotes antigos para enviar e tenta encontrar conexão com gatway
+  Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
+  digitalWrite(status_sensor_lora,HIGH); //liga LoRa
+  sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
+  //o caractere J indica o fim da mensagem
+  requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
+  sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
+  reen_data(); //funcao para enviar dados
+  //-----------------------------------
+  without_lat_lon:// se não houver lat e long sistema já vem para cá
+  lastValue = spiffsUtils.readLastValue("/dados.txt");
+  if(lat == 0 && lon == 0 && lastValue != NULL){ // se não houver lat e lon atuais o programa apenas confere se há pacotes antigos para enviar e tenta encontrar conexão com gatway
     Serial.println("=======[Ex. memoria -> Procurar GATWAY=========");
     digitalWrite(status_sensor_lora,HIGH); //liga LoRa
     sprintf(data, "HELLO"); //envia "hello" para conferir se gateway esta por perto
@@ -190,11 +192,11 @@ void loop(){
     sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data);
     reen_data(); //funcao para enviar dados
   }
-  else{
+  else if(lat == 0 && lon == 0 && lastValue == NULL){
     Serial.println("=======[N Ex. memoria - lat e lon N existem]=========");
     goto without_coord; //não a nada a ser feito, sistema dorme.
   }
-    //----------------------------------------
+  //----------------------------------------
   //protocolo de confirmação de envio
   Serial.println("==========Aguardar confirmacao========="); //debug serial.print
   configuration_to_confirmation();
@@ -278,10 +280,9 @@ void loop(){
     }
   }
   //-----------------------------------
-  digitalWrite(status_sensor_lora,LOW); //desliga LoRa
-
-  //força o ESP32 entrar em modo SLEEP
   without_coord: //sistema pula para ca se não apresentar coordenadas
+  digitalWrite(status_sensor_lora,LOW); //desliga LoRa
+  //força o ESP32 entrar em modo SLEEP
   Serial.println(("Sistema entrando em Deep Sleep"));
   Serial.println("Desligando todos os sensores");
   Serial.println("=======Fim do processo========="); //debug serial.print
