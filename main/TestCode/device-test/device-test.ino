@@ -193,6 +193,7 @@ void loop(){
   else{
     Serial.println("=======[N Ex. memoria - lat e lon N existem]=========");
     goto without_coord; //não a nada a ser feito, sistema dorme.
+  }
     //----------------------------------------
   //protocolo de confirmação de envio
   Serial.println("==========Aguardar confirmacao========="); //debug serial.print
