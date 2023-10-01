@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2023-10-01T19:48:55.962Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 OPR/102.0.0.0" etag="AdXs0cLCDyAZFqbJwmD9" version="22.0.0" type="github">
+<mxfile host="app.diagrams.net" modified="2023-10-01T19:49:54.052Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 OPR/102.0.0.0" etag="so1ShOry_9jTqOKxaRPj" version="22.0.0" type="github">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
-    <mxGraphModel dx="3580" dy="2053" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1685" dy="966" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
@@ -118,7 +118,7 @@
         <mxCell id="KdF7l_LlImrHwwRQQBVm-0" value="START VOID LOOP" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="1099.5" y="40" width="71" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="KdF7l_LlImrHwwRQQBVm-1" value="&lt;h1&gt;DEVICE&amp;nbsp;&lt;/h1&gt;THE DEVICE IS THE PART THAN FALLOW THE ANIMAL&lt;p&gt;THIS IS ALL PARTS OF THE DEVICE. THE SYSTEM HAS DIVIDER IN INITIALIZATION, SETUP AND LOOP.&amp;nbsp;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+        <mxCell id="KdF7l_LlImrHwwRQQBVm-1" value="&lt;h1&gt;DEVICE&amp;nbsp;&lt;/h1&gt;THE DEVICE IS THE PART THAN FALLOW THE ANIMAL&lt;p&gt;THIS IS ALL PARTS OF THE DEVICE. THE SYSTEM HAS DIVIDER IN INITIALIZATION, SETUP AND LOOP.&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="30" y="45" width="190" height="120" as="geometry" />
         </mxCell>
         <mxCell id="KdF7l_LlImrHwwRQQBVm-151" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="KdF7l_LlImrHwwRQQBVm-2" target="KdF7l_LlImrHwwRQQBVm-5">
