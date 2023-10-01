@@ -26,6 +26,7 @@ float time_reenv; //variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
 unsigned int time_to_resend = 5000; // tempo em ms para nova tentativa de envio LoRa
 unsigned int time_finish_resend = 11000; //Tempo em ms de tentativas
+String lastValue;
 
 int requiredBufferSize = 0; // quantidade de bytes que serão enviados (variavel)
 char mensagem[120]; //Vetor para mensagem completa
@@ -145,6 +146,7 @@ void loop(){
       }
       if(counter_gps_cicle >= n_cicles_gps ){
         Serial.println("\nCoordenadas não encontradas"); // informa essa condição
+        gps_standby();
         break;
       }
       counter_gps_cicle++;
@@ -168,17 +170,30 @@ void loop(){
   y = event.acceleration.y; //alecerometro em y
   z = event.acceleration.z; //alecerometro em z
   digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345)
-  
   //-----------------------------------
-  //organizar e enviar LoRa - tentativa atual
-  Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
-  digitalWrite(status_sensor_lora,HIGH); //liga LoRa
-  sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
-  //o caractere J indica o fim da mensagem
-  requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
-  sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
-  reen_data(); //funcao para enviar dados
-  //----------------------------------------
+  //organizar e enviar LoRa - tentativa atua
+  if(lat != 0 && lon != 0){ //se existir lat e lon empacotar informações atuais para enviar
+    Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
+    digitalWrite(status_sensor_lora,HIGH); //liga LoRa
+    sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
+    //o caractere J indica o fim da mensagem
+    requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
+    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
+    reen_data(); //funcao para enviar dados
+  } 
+  else 
+  if(spiffsUtils.readLastValue("/dados.txt") != NULL){ // se não houver lat e lon atuais o programa apenas confere se há pacotes antigos para enviar e tenta encontrar conexão com gatway
+    Serial.println("=======[Ex. memoria -> Procurar GATWAY=========");
+    digitalWrite(status_sensor_lora,HIGH); //liga LoRa
+    sprintf(data, "HELLO"); //envia "hello" para conferir se gateway esta por perto
+    requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
+    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data);
+    reen_data(); //funcao para enviar dados
+  }
+  else{
+    Serial.println("=======[N Ex. memoria - lat e lon N existem]=========");
+    goto without_coord; //não a nada a ser feito, sistema dorme.
+    //----------------------------------------
   //protocolo de confirmação de envio
   Serial.println("==========Aguardar confirmacao========="); //debug serial.print
   configuration_to_confirmation();
@@ -233,7 +248,7 @@ void loop(){
         conf = strtok(NULL, ","); //quebra para conferir qualidade de sinal
         if(quality_signal_lora(atof(conf))){ //se a qualidade do sinal estiver boa
           Serial.println("sinal ta bom");
-          String lastValue = spiffsUtils.readLastValue("/dados.txt"); //devolve o ultimo valor gravado
+          lastValue = spiffsUtils.readLastValue("/dados.txt"); //devolve o ultimo valor gravado
           if(lastValue == NULL) {
             Serial.println("não há nada para enviar");
           }
