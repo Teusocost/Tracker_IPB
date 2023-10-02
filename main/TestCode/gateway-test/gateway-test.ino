@@ -1,5 +1,5 @@
 // biblitoecas e variáveis para WIfi/MQTT
-#include <WiFi.h>
+//#include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager -> para adicionar colocar login e senha
@@ -46,13 +46,18 @@ char markers[12];// = "ABCDEFGHIJK";  // J indica o fim da string
 char *data; // para armazenar as informações que chegam
 char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 char last_data[] = "Z"; //Caracter para conferir se o pacote é da memoria (UTC Time Format has a Z)  
-char find_gatway[] = "HELLO"; //mensagem que device envia para encontrar gatway
+char find_gatway[] = "O"; //mensagem que device envia para encontrar gatway
 void zerar_extractedStrings(); //para zerar a matriz
 char type_data = 0; //tipo de dado que está chegando [0] - atual; [1] - dado guardado
 //---------------------------------------------------------
+#include <Arduino.h>
 // outos pinos do sistema
 #define led_to_rec 21
-
+// variaveis para função millis (mostrar "." enquanto nao recebe sinal);
+unsigned int break_line = 60000; // 60 segundos (tempo de reinício de função) (milis)
+unsigned int time_to_show_point = 1000; //"." é mostrado a cada tempo (milis)
+unsigned long time_break_line; //variavel de controle
+unsigned long time_show_msg; //variavel de controle
 void setup()
 {
   Serial.begin(115200);                           // connect serial
@@ -62,29 +67,45 @@ void setup()
   //------------------------------------
   // definições WIFI/MQTT
   //setup_wifi();
-  WiFiManager wm;
+  WiFiManager Gatway; //objeto do tipo wifimeneger 
   bool res;
-  res = wm.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
+  res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
   if(!res) {
-        Serial.println("Failed to connect");
-        // ESP.restart();
-    } 
-    else {
-        //if you get here you have connected to the WiFi    
-        Serial.println("connected...yeey :)");
-    }
+    Serial.println("Failed to connect");
+    // ESP.restart();
+  } 
+  else {
+    //if you get here you have connected to the WiFi    
+    Serial.println("connected...yeey :)");
+  }
     
   client.setServer(mqttServer, mqttPort);
   //------------------------------------
   // outros pinos
   pinMode(led_to_rec,OUTPUT);
   digitalWrite(led_to_rec, LOW);//Desliga led
+  //------------------------------------
+  //millis
+  time_break_line = millis();
+  time_show_msg = millis();
 }
 
 void loop(){
-  //Serial.println("Aguardando mensagem LoRa");
+  start: // para usar goto se necessário
+  //----------------------------------------------
+  //mostra "." para indicar que está aguardando pacote LORA
+  
+  if (millis()-time_break_line>=break_line) {
+    // Reinicie o contador millis()
+    Serial.print("\n"); //quera linha
+    time_break_line = millis();
+  }
+  if(millis()-time_show_msg >= time_to_show_point){
+    Serial.print(".");
+    time_show_msg=millis();
+  }
   if (lora.available()){
-    Serial.println("======================="); //debug serial
+    Serial.println("\n========[PACOTE CHEGOU]=========="); //debug serial
     incomingString = lora.readString();
     Serial.println(incomingString);
     //----------------------------------------------
@@ -109,19 +130,27 @@ void loop(){
 
     for (i = 0;data[i] != '\0'; i++){
       if (strchr(find_gatway,data[i])){ //se device estver procurando o gatwat
+        Serial.println("[Device procurando gatway]"); //debug
+        delay(200);
         send_confirmation(); //envia confirmação
-        goto the_end; //termina loop
+        goto start; //termina loop
       }
       if(strchr(last_data,data[i])){ // exsitir "Z" no pacote o dado é passado
-       sprintf(markers, "ABCDEFGHIJZK"); //atribui K como ultimo caracter (depois do horario)
-       type_data = 1; //flag para indicar que o pacote é passado
-       break;
+        
+        sprintf(markers, "ABCDEFGHIJZK"); //atribui K como ultimo caracter (depois do horario)
+        type_data = 1; //flag para indicar que o pacote é passado
+        break;
       }
       else{
+        
         type_data = 0; //flag para pacote em tempo real
         sprintf(markers, "ABCDEFGHIJ"); // caso contrario o pacote é em tempo real
       }
     }
+    //----------------------------------------------
+    if(type_data == 0){Serial.println("[Pacote atual]");} else //debug
+    if(type_data == 1){Serial.println("[Pacote da memoria]");} //debug
+    //----------------------------------------------
     //pré processamento - lógica para quebrar o pacote em partes 
     for (i = 0; data[i] != '\0'; i++){ 
       if (strchr(markers, data[i])) //analisa se o caractere 
@@ -160,7 +189,7 @@ void loop(){
     doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
     doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
     if(type_data == 1) doc["time"] = (extractedStrings[10] + 1); // -- J
-    doc["RSSI_LoRa"] = RSSI_LoRA;
+    doc["RSSI_LoRa"] = atof(RSSI_LoRA);
     doc["RSSI_WIFI"] = rssi;
     // Serializar o objeto JSON em uma string
     if (incomingString.indexOf('\r') != -1) {
@@ -192,7 +221,6 @@ void loop(){
     void zerar_extractedStrings(); //para zerar a matriz de dados
     Serial.println("string zerada");
     //-------------------------------------------
-    the_end: // para usar goto se necessário
     if (flag_mqtt){
       send_confirmation(); //se o pacote foi publicado a mensagem de confirmação é enviada para o device
     }
@@ -208,13 +236,15 @@ void send_confirmation(){
   Serial.println("Serial ligada");
   char conf[30]; //vetor para empacote mensagem de confirmacao
   sprintf(conf, "AT+SEND=%c,2,OK",end_to_send);
+  Serial.println(conf); //mostra mensagem a ser enviada
   lora.println(conf); //manda a mensagem de confirmacao de recebimento
   Serial.println("mandando mensagem de confirmação..");
   Serial.println(lora.readString()); //lê a resposta do módulo
-  led_to_receive();
+  led_to_send();
+  Serial.println("[FIM DO PROCESSO] -> AGUARDAR NOVA MENSAGEM");
 }
 
-void led_to_receive(){
+void led_to_send(){
   digitalWrite(led_to_rec, HIGH); //Liga Led
   delay(200); //tempo de led ligado
   digitalWrite(led_to_rec, LOW);//Desliga led
@@ -280,8 +310,8 @@ void reconnect()
     {
       Serial.print("Falha na conexão - Estado: ");
       Serial.print(client.state());
-      Serial.println(" Tentando novamente em 1 segundos");
-      delay(1000);
+      Serial.println(" Tentando novamente em 2 segundos");
+      delay(2000);
     }
   }
 }
