@@ -2,18 +2,21 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager -> para adicionar colocar login e senha
 
-// Configurações da rede Wi-Fi
-const char *ssid = "NOS-2E40";
-const char *password = "2TJA5RZ9";
-WiFiClient espClient;
-int32_t rssi; // variavel para recever sinal RSSI wifi
+//-------------------------------------------
+// Configurações da rede Wi-Fi (não necessário depois da library Wifimeneger)
+//const char *ssid = "NOS-2E40";
+//const char *password = "2TJA5RZ9";
+
  //const char* ssid = "iPhone de Mateus";
  //const char* password = "12345678";
 
  //const char* ssid = "agents";
  //const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
 
+WiFiClient espClient;
+int32_t rssi; // variavel para recever sinal RSSI wifi
 // Configurações do broker MQTT
 const char *mqttServer = "broker.mqtt-dashboard.com";
 bool flag_mqtt = false; //flag para garantir envio do pacote.
@@ -58,7 +61,19 @@ void setup()
   Serial.println(lora.readString()); // para conferir o endereco do modulo
   //------------------------------------
   // definições WIFI/MQTT
-  setup_wifi();
+  //setup_wifi();
+  WiFiManager wm;
+  bool res;
+  res = wm.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
+  if(!res) {
+        Serial.println("Failed to connect");
+        // ESP.restart();
+    } 
+    else {
+        //if you get here you have connected to the WiFi    
+        Serial.println("connected...yeey :)");
+    }
+    
   client.setServer(mqttServer, mqttPort);
   //------------------------------------
   // outros pinos
@@ -228,7 +243,7 @@ void toggleSerial(bool enable)
 }
 
 
-void setup_wifi()
+/*void setup_wifi()
 {
   delay(10);
   Serial.println();
@@ -247,6 +262,7 @@ void setup_wifi()
   Serial.println("Conectado à rede Wi-Fi");
   Serial.println("Endereço IP: " + WiFi.localIP().toString());
 }
+*/
 
 void reconnect()
 {
