@@ -284,11 +284,22 @@ void led_to_send(){
 }
 
 void zerar_extractedStrings(){ //função para zerar string que armazena os dados
-    for (int i = 0; i < 12; ++i) {
-        for (int j = 0; j < 21; ++j) {
+    int i,j;
+    for (i = 0; i < 12; ++i) {
+        for (j = 0; j < 21; ++j) {
             extractedStrings[i][j] = '\0';
         }
     }
+    for (i =0; i<21;i++){
+      utctime[i] = '\0';
+    }
+    for(i = 0; i<3;i++){
+      for(j =0; j<11;j++){
+        latlon[i][j]='\0';
+      }
+    }
+    RSSI_LoRA = 0;
+    rssi = 0;
 }
 
 bool serialEnabled = true; // Variável de controle para a comunicação serial
