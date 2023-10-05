@@ -8,7 +8,7 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 1; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
+int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 6; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
@@ -25,7 +25,7 @@ int tent = 1;     //variavel de controle - n de tentativas
 float time_reenv; //variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
 unsigned int time_to_resend = 5000; // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = 25000; //Tempo em ms de tentativas
+unsigned int time_finish_resend = 11000; //Tempo em ms de tentativas
 String lastValue;
 
 int requiredBufferSize = 0; // quantidade de bytes que serão enviados (variavel)
@@ -73,7 +73,7 @@ int Percentage;
 // fator de conversão de microsegundos para segundos
 #define uS_TO_S_FACTOR 1000000
 // tempo que o ESP32 ficará em modo sleep (em segundos)
-#define TIME_TO_SLEEP 5
+#define TIME_TO_SLEEP 60
 
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
