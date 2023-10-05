@@ -176,7 +176,7 @@ void loop(){
   //organizar e enviar LoRa - tentativa atua
   Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
   digitalWrite(status_sensor_lora,HIGH); //liga LoRa
-  sprintf(data, "A%.6fB%.6fC%iD%.2fE%.2fF%.2fG%.2fH%3.2fI%.0dJ",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
+  sprintf(data, "A%.6f%.6fB%iC%.2fD%.2fE%.2fF%.2fG%3.2fH%.0dI",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
   //o caractere J indica o fim da mensagem
   requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
   sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"

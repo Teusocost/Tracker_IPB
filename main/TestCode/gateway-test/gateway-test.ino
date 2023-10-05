@@ -46,6 +46,7 @@ char markers[12];// = "ABCDEFGHIJK";  // J indica o fim da string
 char *data; // para armazenar as informações que chegam
 char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
 char utctime[20]; //vetor que vai receber time
+char latlon[2][10]; //veotor para receber latitude e longitude
 char last_data[] = "K"; //Caracter para conferir se o pacote é da memoria (UTC Time Format has a Z)  
 char find_gatway[] = "O"; //mensagem que device envia para encontrar gatway
 void zerar_extractedStrings(); //para zerar a matriz
@@ -138,14 +139,14 @@ void loop(){
       }
       if(strchr(last_data,data[i])){ // exsitir "Z" no pacote o dado é passado
         
-        sprintf(markers, "ABCDEFGHIJK"); //atribui K como ultimo caracter (depois do horario)
+        sprintf(markers, "ABCDEFGHIK"); //atribui K como ultimo caracter (depois do horario)
         type_data = 1; //flag para indicar que o pacote é passado
         break;
       }
       else{
         
         type_data = 0; //flag para pacote em tempo real
-        sprintf(markers, "ABCDEFGHIJ"); // caso contrario o pacote é em tempo real
+        sprintf(markers, "ABCDEFGHI"); // caso contrario o pacote é em tempo real
       }
     }
     //----------------------------------------------
@@ -173,6 +174,8 @@ void loop(){
     //----------------------------------------------
     //Organizar formato de hora: 2023-10-05T11:30:44Z
     convert_time_to_UTC_format();
+    //Separar Lat e lon
+    separate_lat_and_lon();
     //for (int i = 0; i < count-1; i++){ // -1 por que J não conta
     //printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
     //}
@@ -183,16 +186,16 @@ void loop(){
     Serial.print(rssi);
     Serial.println(" dBm");
     //------------------------------------------------------
-    doc["latitude"] = atof(extractedStrings[1] + 1);    // -- A
-    doc["longitude"] = atof(extractedStrings[2] + 1);   // -- B
-    doc["vel"] = atof(extractedStrings[3] + 1);         // -- C
-    doc["temperatura"] = atof(extractedStrings[4] + 1); // -- D
-    doc["umidade"] = atof(extractedStrings[5] + 1);     // -- E
-    doc["X"] = atof(extractedStrings[6] + 1);           // -- F
-    doc["Y"] = atof(extractedStrings[7] + 1);           // -- G
-    doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
-    doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
-    if(type_data == 1) doc["time"] = utctime; // -- J
+    doc["latitude"] = atof(latlon[1]);                  // -- A
+    doc["longitude"] = atof(latlon[2]);                 // -- B
+    doc["vel"] = atof(extractedStrings[2] + 1);         // -- C
+    doc["temperatura"] = atof(extractedStrings[3] + 1); // -- D
+    doc["umidade"] = atof(extractedStrings[4] + 1);     // -- E
+    doc["X"] = atof(extractedStrings[5] + 1);           // -- F
+    doc["Y"] = atof(extractedStrings[6] + 1);           // -- G
+    doc["Z"] = atof(extractedStrings[7] + 1);           // -- H
+    doc["Bat_Perc"] = atof(extractedStrings[8] + 1);    // -- I
+    if(type_data == 1) doc["time"] = utctime;           // -- J
     doc["RSSI_LoRa"] = atof(RSSI_LoRA);
     doc["RSSI_WIFI"] = rssi;
     // Serializar o objeto JSON em uma string
@@ -235,21 +238,26 @@ void loop(){
   }
 }
 
+void separate_lat_and_lon(){
+  strncpy(latlon[1] , extractedStrings[1]+1,9);  //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
+  strncpy(latlon[2] , extractedStrings[1]+1+9,9); //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
+}
+
 void convert_time_to_UTC_format(){
     // Copie a parte da data
-    strncpy(utctime, extractedStrings[10]+1, 4); // Copia "2023"
+    strncpy(utctime, extractedStrings[9]+1, 4); // Copia "2023"
     utctime[4] = '-'; // Adiciona '-'
-    strncpy(utctime + 5, extractedStrings[10]+1 + 4, 2); // Copia "10"
+    strncpy(utctime + 5, extractedStrings[9]+1 + 4, 2); // Copia "10"
     utctime[7] = '-'; // Adiciona '-'
 
     // Copie a parte da hora
-    strncpy(utctime + 8, extractedStrings[10]+1 + 6, 2); // Copia "05"
+    strncpy(utctime + 8, extractedStrings[9]+1 + 6, 2); // Copia "05"
     utctime[10] = 'T'; // Adiciona 'T'
-    strncpy(utctime + 11, extractedStrings[10]+1 + 8, 2); // Copia "11"
+    strncpy(utctime + 11, extractedStrings[9]+1 + 8, 2); // Copia "11"
     utctime[13] = ':'; // Adiciona ':'
-    strncpy(utctime + 14, extractedStrings[10]+1 + 10, 2); // Copia "30"
+    strncpy(utctime + 14, extractedStrings[9]+1 + 10, 2); // Copia "30"
     utctime[16] = ':'; // Adiciona ':'
-    strncpy(utctime + 17, extractedStrings[10]+1 + 12, 2); // Copia "44"
+    strncpy(utctime + 17, extractedStrings[9]+1 + 12, 2); // Copia "44"
     utctime[19] = 'Z'; // Null-terminate a string
     utctime[20] = '\0'; // Null-terminate a string
     // Imprima a string resultante
