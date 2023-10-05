@@ -45,7 +45,8 @@ char markers[12];// = "ABCDEFGHIJK";  // J indica o fim da string
 
 char *data; // para armazenar as informações que chegam
 char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
-char last_data[] = "Z"; //Caracter para conferir se o pacote é da memoria (UTC Time Format has a Z)  
+char utctime[20]; //vetor que vai receber time
+char last_data[] = "K"; //Caracter para conferir se o pacote é da memoria (UTC Time Format has a Z)  
 char find_gatway[] = "O"; //mensagem que device envia para encontrar gatway
 void zerar_extractedStrings(); //para zerar a matriz
 char type_data = 0; //tipo de dado que está chegando [0] - atual; [1] - dado guardado
@@ -137,7 +138,7 @@ void loop(){
       }
       if(strchr(last_data,data[i])){ // exsitir "Z" no pacote o dado é passado
         
-        sprintf(markers, "ABCDEFGHIJZK"); //atribui K como ultimo caracter (depois do horario)
+        sprintf(markers, "ABCDEFGHIJK"); //atribui K como ultimo caracter (depois do horario)
         type_data = 1; //flag para indicar que o pacote é passado
         break;
       }
@@ -169,6 +170,9 @@ void loop(){
         extractedStrings[count][j++] = data[i];
       }
     }
+    //----------------------------------------------
+    //Organizar formato de hora: 2023-10-05T11:30:44Z
+    convert_time_to_UTC_format();
     //for (int i = 0; i < count-1; i++){ // -1 por que J não conta
     //printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
     //}
@@ -188,7 +192,7 @@ void loop(){
     doc["Y"] = atof(extractedStrings[7] + 1);           // -- G
     doc["Z"] = atof(extractedStrings[8] + 1);           // -- H
     doc["Bat_Perc"] = atof(extractedStrings[9] + 1);    // -- I
-    if(type_data == 1) doc["time"] = (extractedStrings[10] + 1); // -- J
+    if(type_data == 1) doc["time"] = utctime; // -- J
     doc["RSSI_LoRa"] = atof(RSSI_LoRA);
     doc["RSSI_WIFI"] = rssi;
     // Serializar o objeto JSON em uma string
@@ -229,6 +233,27 @@ void loop(){
     }
     //-------------------------------------------
   }
+}
+
+void convert_time_to_UTC_format(){
+    // Copie a parte da data
+    strncpy(utctime, extractedStrings[10]+1, 4); // Copia "2023"
+    utctime[4] = '-'; // Adiciona '-'
+    strncpy(utctime + 5, extractedStrings[10]+1 + 4, 2); // Copia "10"
+    utctime[7] = '-'; // Adiciona '-'
+
+    // Copie a parte da hora
+    strncpy(utctime + 8, extractedStrings[10]+1 + 6, 2); // Copia "05"
+    utctime[10] = 'T'; // Adiciona 'T'
+    strncpy(utctime + 11, extractedStrings[10]+1 + 8, 2); // Copia "11"
+    utctime[13] = ':'; // Adiciona ':'
+    strncpy(utctime + 14, extractedStrings[10]+1 + 10, 2); // Copia "30"
+    utctime[16] = ':'; // Adiciona ':'
+    strncpy(utctime + 17, extractedStrings[10]+1 + 12, 2); // Copia "44"
+    utctime[19] = 'Z'; // Null-terminate a string
+    utctime[20] = '\0'; // Null-terminate a string
+    // Imprima a string resultante
+    printf("Horário com os caracteres adicionados: %s\n", utctime);
 }
 
 void send_confirmation(){

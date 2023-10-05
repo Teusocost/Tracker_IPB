@@ -8,7 +8,7 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 6; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
+int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 1; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
@@ -25,7 +25,7 @@ int tent = 1;     //variavel de controle - n de tentativas
 float time_reenv; //variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
 unsigned int time_to_resend = 5000; // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = 11000; //Tempo em ms de tentativas
+unsigned int time_finish_resend = 25000; //Tempo em ms de tentativas
 String lastValue;
 
 int requiredBufferSize = 0; // quantidade de bytes que serão enviados (variavel)
@@ -353,7 +353,7 @@ void toggleSerial_gps(bool enable){ //funcao ligar/desligar comunicao com LORA
 
 void keep_data(){
   Serial.println("dado que serão guardados");
-  sprintf(keep, "%s%i-%02i-%02iT%02i:%02i:%02iZK\n",data,year,month,day,hour,minute,second);
+  sprintf(keep, "%s%i%02i%02i%02i%02i%02iK\n",data,year,month,day,hour,minute,second); //K é o final da mensage,
   Serial.println(keep);
   spiffsUtils.appendToFile("/dados.txt", keep); //grava um novo valor em SPIFF
 }
