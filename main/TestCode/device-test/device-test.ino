@@ -103,9 +103,14 @@ void setup()
   // gps definições
   toggleSerial_gps(true); //sistema ja liga gps
   delay(25);
+  if(gpsSerial.available()){
+    Serial.println("Sensor GPS não encontrado, verifique o esquema eletrico");
+    security_function();
+    }
   Serial.println("ligando o gps em modo hot");
   gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); //acorda o gps em modo hot
   lat = 0; lon = 0;
+
   //------------------------------------
   // sht21 definições
   Wire.begin(SDA_PIN, SCL_PIN); // Inicializa a comunicação I2C
@@ -113,8 +118,7 @@ void setup()
   // Acelerômetro
   if (!accel.begin()){
     Serial.println("No ADXL345 sensor detected.");
-    Serial.println("Resentando");
-    ESP.restart(); //Função para resetar ESP
+    security_function();
   }
 
   //------------------------------------
@@ -393,4 +397,15 @@ void printallvalues(){
   Serial.print(hour); Serial.print(":");
   Serial.print(minute); Serial.print(":");
   Serial.println(second);
+}
+
+void security_function(){ //função de seguranca caso algum módulo não for encontrado no sistema
+  Serial.println("Sistema com mal funcionamento");
+  Serial.println("Desligando/adormecendo todos os módulos");
+  digitalWrite(status_sensors,LOW);
+  digitalWrite(status_battery,LOW);
+  digitalWrite(status_sensor_lora,LOW);
+  gps_standby(); 
+  Serial.println("colocando o sistema em standby");
+  esp_deep_sleep_start();
 }

@@ -12,7 +12,12 @@
         "optional": "cpp",
         "system_error": "cpp",
         "*.tcc": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "memory": "cpp",
+        "istream": "cpp",
+        "sstream": "cpp",
+        "streambuf": "cpp",
+        "typeinfo": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -80,8 +80,8 @@ void read_all_data_gps(){
     Serial.print("tamanho de second: ");
   Serial.println(snprintf(NULL, 0, "%i",second));
 
-  sprintf(keep, "%s%i-%02i-%02iT%02i:%02i:%02iZK\n",year,month,day,hour,minute,second);
-  Serial.println(keep);
-  requiredBufferSize = snprintf(NULL, 0, "%s",keep); //calcula tamanho string
-  Serial.println(requiredBufferSize);
+  //sprintf(keep, "%s%i-%02i-%02iT%02i:%02i:%02iZK\n",year,month,day,hour,minute,second);
+  //Serial.println(keep);
+  //requiredBufferSize = snprintf(NULL, 0, "%s",keep); //calcula tamanho string
+  //Serial.println(requiredBufferSize);
 }
