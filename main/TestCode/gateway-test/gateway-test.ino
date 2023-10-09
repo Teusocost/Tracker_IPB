@@ -93,7 +93,6 @@ void setup()
 }
 
 void loop(){
-  start: // para usar goto se necessário
   //----------------------------------------------
   //mostra "." para indicar que está aguardando pacote LORA
   
@@ -132,10 +131,8 @@ void loop(){
 
     for (i = 0;data[i] != '\0'; i++){
       if (strchr(find_gatway,data[i])){ //se device estver procurando o gatwat
-        Serial.println("[Device procurando gatway]"); //debug
-        delay(200);
-        send_confirmation(); //envia confirmação
-        goto start; //termina loop
+        type_data = 2; //flag para indicar que o pacote é passado
+        break;
       }
       if(strchr(last_data,data[i])){ // exsitir "Z" no pacote o dado é passado
         
@@ -152,33 +149,34 @@ void loop(){
     //----------------------------------------------
     if(type_data == 0){Serial.println("[Pacote atual]");} else //debug
     if(type_data == 1){Serial.println("[Pacote da memoria]");} //debug
+    if(type_data == 2){Serial.println("[Device procurando gatway]");} //debug
     //----------------------------------------------
-    //pré processamento - lógica para quebrar o pacote em partes 
-    for (i = 0; data[i] != '\0'; i++){ 
-      if (strchr(markers, data[i])) //analisa se o caractere 
-      {
-        { // se input contem markers
-          if (startPos != -1)
-            extractedStrings[count][j] = '\0';
-            count++;
-            j = 0;
+    //pré processamento - lógica para quebrar o pacote em partes se pacote requiser isso
+    if(type_data == 0 || type_data == 0){ // se o pacote for do tipo 0 ou 1
+      for (i = 0; data[i] != '\0'; i++){ 
+        if (strchr(markers, data[i])) //analisa se o caractere 
+        {
+          { // se input contem markers
+            if (startPos != -1)
+              extractedStrings[count][j] = '\0';
+              count++;
+              j = 0;
+          }
+          extractedStrings[count][j++] = data[i];
+          startPos = i;
         }
-        extractedStrings[count][j++] = data[i];
-        startPos = i;
+        else if (startPos != -1)
+        {
+          extractedStrings[count][j++] = data[i];
+        }
       }
-      else if (startPos != -1)
-      {
-        extractedStrings[count][j++] = data[i];
-      }
+      //----------------------------------------------
+      //Organizar formato de hora: 2023-10-05T11:30:44Z
+      convert_time_to_UTC_format();
+      //Separar Lat e lon
+      separate_lat_and_lon();
     }
-    //----------------------------------------------
-    //Organizar formato de hora: 2023-10-05T11:30:44Z
-    convert_time_to_UTC_format();
-    //Separar Lat e lon
-    separate_lat_and_lon();
-    //for (int i = 0; i < count-1; i++){ // -1 por que J não conta
-    //printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
-    //}
+    else //se o pacote for de outro tipo ele pula esse laço e faz:
     //------------------------------------
     // imprimir nível da conexão com Wifi
     rssi = WiFi.RSSI();
@@ -186,18 +184,19 @@ void loop(){
     Serial.print(rssi);
     Serial.println(" dBm");
     //------------------------------------------------------
-    doc["latitude"] = atof(latlon[1]);                  // -- A
-    doc["longitude"] = atof(latlon[2]);                 // -- B
-    doc["vel"] = atof(extractedStrings[2] + 1);         // -- C
-    doc["temperatura"] = atof(extractedStrings[3] + 1); // -- D
-    doc["umidade"] = atof(extractedStrings[4] + 1);     // -- E
-    doc["X"] = atof(extractedStrings[5] + 1);           // -- F
-    doc["Y"] = atof(extractedStrings[6] + 1);           // -- G
-    doc["Z"] = atof(extractedStrings[7] + 1);           // -- H
-    doc["Bat_Perc"] = atof(extractedStrings[8] + 1);    // -- I
+    if(type_data == 0) doc["latitude"] = atof(latlon[1]);                  // -- A
+    if(type_data == 0) doc["longitude"] = atof(latlon[2]);                 // -- B
+    if(type_data == 0) doc["vel"] = atof(extractedStrings[2] + 1);         // -- C
+    if(type_data == 0) doc["temperatura"] = atof(extractedStrings[3] + 1); // -- D
+    if(type_data == 0) doc["umidade"] = atof(extractedStrings[4] + 1);     // -- E
+    if(type_data == 0) doc["X"] = atof(extractedStrings[5] + 1);           // -- F
+    if(type_data == 0) doc["Y"] = atof(extractedStrings[6] + 1);           // -- G
+    if(type_data == 0) doc["Z"] = atof(extractedStrings[7] + 1);           // -- H
+    if(type_data == 0) doc["Bat_Perc"] = atof(extractedStrings[8] + 1);    // -- I
     if(type_data == 1) doc["time"] = utctime;           // -- J
-    doc["RSSI_LoRa"] = atof(RSSI_LoRA);
-    doc["RSSI_WIFI"] = rssi;
+    if(type_data == 0 || type_data == 2) doc["RSSI_LoRa"] = atof(RSSI_LoRA);
+    if(type_data == 0 || type_data == 2) doc["RSSI_WIFI"] = rssi;
+
     // Serializar o objeto JSON em uma string
     if (incomingString.indexOf('\r') != -1) {
     Serial.println("Caracteres \\r encontrados na incomingString.");

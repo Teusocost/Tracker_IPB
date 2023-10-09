@@ -8,7 +8,7 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 1; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
+int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 6; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
@@ -25,7 +25,7 @@ int tent = 1;     //variavel de controle - n de tentativas
 float time_reenv; //variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
 unsigned int time_to_resend = 5000; // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = 25000; //Tempo em ms de tentativas
+unsigned int time_finish_resend = 16000; //Tempo em ms de tentativas
 String lastValue;
 
 int requiredBufferSize = 0; // quantidade de bytes que serão enviados (variavel)
@@ -191,10 +191,7 @@ void loop(){
   if(lat == 0 && lon == 0 && lastValue != NULL){ // se não houver lat e lon atuais o programa apenas confere se há pacotes antigos para enviar e tenta encontrar conexão com gatway
     Serial.println("=======[Ex. memoria] -> Procurar GATWAY=========");
     digitalWrite(status_sensor_lora,HIGH); //liga LoRa
-    sprintf(data, "HELLO"); //envia "hello" para conferir se gateway esta por perto
-    requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
-    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data);
-    reen_data(); //funcao para enviar dados
+    send_hello(); //função para mandar um hello e encontrar o gateway;
   }
   else if(lat == 0 && lon == 0 && lastValue == NULL){
     Serial.println("=======[N Ex. memoria - lat e lon N existem]=========");
@@ -292,6 +289,13 @@ void loop(){
   Serial.println("=======Fim do processo========="); //debug serial.print
   esp_deep_sleep_start();
 } // fim loop
+
+void send_hello(){ //função para mandar um hello e econtrar o gatway
+  sprintf(data, "HELLO"); //envia "hello" para conferir se gateway esta por perto
+    requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
+    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data);
+    reen_data(); //funcao para enviar dados
+}
 
 void gps_standby(){
   Serial.println("colocando o gps em standby");
