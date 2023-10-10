@@ -11,6 +11,7 @@ int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second
 int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 6; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
+unsigned long now; //variavel de controle de tempo
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -39,6 +40,8 @@ char *conf; // para armazenar as informações que chegam
 bool serialEnabled = true; // Variável de controle para a comunicação serial
 
 int min_quality_signal_resend = -50; //qualidade minima do sinal lora para enviar dado da memoria
+
+
 //---------------------------------------------------------
 // Armazenamento SPIFFs
 #include "SPIFFS_Utils.h"
@@ -80,19 +83,22 @@ int Percentage;
 #define status_sensor_lora 32
 #define status_sensors 18 //ADXL345 e DHT21
 #define status_battery 4
+const int pinInterrupt = 23; // Pino de interrupção para enviar pacote "HELLO"
 void led_to_send();
 void toggleSerial_lora(bool enable);
 void toggleSerial_gps(bool enable);
 void keep_data();
 void configuration_to_confirmation();
 //---------------------------------------------------------
-
+#include "EEPROM.h"
+#define EEPROM_SIZE 1
 void setup()
 {
   //------------------------------------
   // definições placa
   Serial.begin(115200);
   // pinos de leds/transistores/leituras de subsistemas
+  EEPROM.begin(EEPROM_SIZE); //Iniciar memoria EEPROM (para controlar interrupção);
   pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); //indicar envio
   pinMode(status_sensor_lora, OUTPUT); //status antena lora
   pinMode(status_sensors, OUTPUT); //status sensores
@@ -100,6 +106,8 @@ void setup()
   digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, ADXL345) (permancem sempre ligados)
   //------------------------------------
   //------------------------------------
+  pinMode(pinInterrupt, INPUT_PULLUP); //pino de interrupção para enviar pacote HELLO
+  attachInterrupt(digitalPinToInterrupt(pinInterrupt), handleInterrupt, CHANGE); //RISING -> nível da interrupção
   // gps definições
   toggleSerial_gps(true); //sistema ja liga gps
   delay(25);
@@ -133,12 +141,19 @@ void setup()
 
 void loop(){
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
+  if(EEPROM.read(0) >= 1){
+    Serial.println("HELLO");
+    EEPROM.write(0, 0);
+    EEPROM.commit(); //para gravar efetivamente;
+    send_hello(); //função para mandar um hello e encontrar o gateway;
+    goto wait_confirmation;
+  }
   Serial.println("=======ESP INICIADO========="); //debug serial.print
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
   // Capturando dados GPS
   Serial.println("Processando/aguardando dados GPS");
 
-  unsigned long now = millis(); // iniciando função para contagem
+  now = millis(); // iniciando função para contagem
   while (gpsSerial.available()){ // Entra no laço se comunicação está ok
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
       gps.encode(gpsSerial.read()); //interpreta dados brutos
@@ -178,13 +193,15 @@ void loop(){
   digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345)
   //-----------------------------------
   //organizar e enviar LoRa - tentativa atua
-  Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
-  digitalWrite(status_sensor_lora,HIGH); //liga LoRa
-  sprintf(data, "A%.6f%.6fB%iC%.2fD%.2fE%.2fF%.2fG%3.2fH%.0dI",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
-  //o caractere J indica o fim da mensagem
-  requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
-  sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
-  reen_data(); //funcao para enviar dados
+  if(lat != 0 && lon != 0){ //caso o sistema pule a conferencia realizada no gps ele n passa dessa parte
+    Serial.println("=======Enviar informacoes atuais========="); //debug serial.print
+    digitalWrite(status_sensor_lora,HIGH); //liga LoRa
+    sprintf(data, "A%.6f%.6fB%iC%.2fD%.2fE%.2fF%.2fG%3.2fH%.0dI",lat, lon, vel, temperature, humidity, x, y, z, Percentage); //atribui e organiza as informações em data
+    //o caractere J indica o fim da mensagem
+    requiredBufferSize = snprintf(NULL, 0, "%s",data); //calcula tamanho string
+    sprintf(mensagem, "AT+SEND=%c,%i,%s",end_to_send,requiredBufferSize,data); // junta as informações em "mensagem"
+    reen_data(); //funcao para enviar dados
+  }
   //-----------------------------------
   without_lat_lon:// se não houver lat e long sistema já vem para cá
   lastValue = spiffsUtils.readLastValue("/dados.txt");
@@ -289,6 +306,12 @@ void loop(){
   Serial.println("=======Fim do processo========="); //debug serial.print
   esp_deep_sleep_start();
 } // fim loop
+
+void handleInterrupt() { //função de interrupção
+  EEPROM.write(0, 1);
+  EEPROM.commit();
+  esp_restart();
+}
 
 void send_hello(){ //função para mandar um hello e econtrar o gatway
   sprintf(data, "HELLO"); //envia "hello" para conferir se gateway esta por perto
