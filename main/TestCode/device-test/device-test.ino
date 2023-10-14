@@ -8,7 +8,7 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 10000, counter_gps_cicle =0, n_cicles_gps = 6; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
+int delay_read_gps = 1000, counter_gps_cicle =0, n_cicles_gps = 90; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now; //variavel de controle de tempo
@@ -26,7 +26,7 @@ int tent = 1;     //variavel de controle - n de tentativas
 float time_reenv; //variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
 unsigned int time_to_resend = 5000; // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = 16000; //Tempo em ms de tentativas
+unsigned int time_finish_resend = 6000; //Tempo em ms de tentativas
 String lastValue;
 
 int requiredBufferSize = 0; // quantidade de bytes que serão enviados (variavel)
@@ -76,38 +76,35 @@ int Percentage;
 // fator de conversão de microsegundos para segundos
 #define uS_TO_S_FACTOR 1000000
 // tempo que o ESP32 ficará em modo sleep (em segundos)
-#define TIME_TO_SLEEP 60
+#define TIME_TO_SLEEP 5
 
 //---------------------------------------------------------
 //funções instanciadas antes que o sistema passe a funcionar
 #define status_sensor_lora 32
 #define status_sensors 18 //ADXL345 e DHT21
 #define status_battery 4
-const int pinInterrupt = 23; // Pino de interrupção para enviar pacote "HELLO"
 void led_to_send();
 void toggleSerial_lora(bool enable);
 void toggleSerial_gps(bool enable);
 void keep_data();
 void configuration_to_confirmation();
+ esp_reset_reason_t reason;
 //---------------------------------------------------------
-#include "EEPROM.h"
-#define EEPROM_SIZE 1
 void setup()
 {
   //------------------------------------
   // definições placa
   Serial.begin(115200);
   // pinos de leds/transistores/leituras de subsistemas
-  EEPROM.begin(EEPROM_SIZE); //Iniciar memoria EEPROM (para controlar interrupção);
   pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); //indicar envio
   pinMode(status_sensor_lora, OUTPUT); //status antena lora
   pinMode(status_sensors, OUTPUT); //status sensores
   pinMode(status_battery, OUTPUT); //status bateria
   digitalWrite(status_sensors,HIGH); //liga todos os sensores (DHT21, ADXL345) (permancem sempre ligados)
   //------------------------------------
+  // Verifique o motivo da reinicialização - feito para definir o estado do sistema, ou seja, para encaminhar ou não um pacote HELLO
+  reason = esp_reset_reason();
   //------------------------------------
-  pinMode(pinInterrupt, INPUT_PULLUP); //pino de interrupção para enviar pacote HELLO
-  attachInterrupt(digitalPinToInterrupt(pinInterrupt), handleInterrupt, CHANGE); //RISING -> nível da interrupção
   // gps definições
   toggleSerial_gps(true); //sistema ja liga gps
   delay(25);
@@ -141,14 +138,13 @@ void setup()
 
 void loop(){
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
-  if(EEPROM.read(0) >= 1){
-    Serial.println("HELLO");
-    EEPROM.write(0, 0);
-    EEPROM.commit(); //para gravar efetivamente;
+  if(reason != ESP_RST_DEEPSLEEP){
+    digitalWrite(status_sensor_lora,HIGH); //liga LoRa
+    Serial.println("[SISTEMA REINICIADO] -> ENVIAR PACOTE HELLO");
     send_hello(); //função para mandar um hello e encontrar o gateway;
     goto wait_confirmation;
   }
-  Serial.println("=======ESP INICIADO========="); //debug serial.print
+  Serial.println("=======ESP ACORDADO========="); //debug serial.print
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
   // Capturando dados GPS
   Serial.println("Processando/aguardando dados GPS");
@@ -160,7 +156,8 @@ void loop(){
       read_all_data_gps(); //lê todos os dados
       printallvalues();
       Serial.println("----------------------");
-      if(lat != 0 && lon != 0 ){
+      if(lat != 0 && lon != 0){
+        Serial.println("Coordenadas encontradas");
         break; // loop para aguardar latitude e longitude
       }
       if(counter_gps_cicle >= n_cicles_gps ){
@@ -216,9 +213,9 @@ void loop(){
   }
   //----------------------------------------
   //protocolo de confirmação de envio
+  wait_confirmation:
   Serial.println("==========Aguardar confirmacao========="); //debug serial.print
   configuration_to_confirmation();
-  wait_confirmation:
   while(-1){ // laco para receber confirmação
     //--------------------------------
     //Confere se confirmação chegou
@@ -307,11 +304,6 @@ void loop(){
   esp_deep_sleep_start();
 } // fim loop
 
-void handleInterrupt() { //função de interrupção
-  EEPROM.write(0, 1);
-  EEPROM.commit();
-  esp_restart();
-}
 
 void send_hello(){ //função para mandar um hello e econtrar o gatway
   sprintf(data, "HELLO"); //envia "hello" para conferir se gateway esta por perto
