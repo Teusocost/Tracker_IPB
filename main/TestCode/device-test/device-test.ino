@@ -8,10 +8,11 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 1000, counter_gps_cicle =0, n_cicles_gps = 90; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
+int delay_read_gps = 1000, counter_gps_cicle = 0, n_cicles_gps = 60; //delay, contador, tempo que o sistema vai ler (delay * n ciclos)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now; //variavel de controle de tempo
+int time_gps_wait = 60000; //gps tenta encontrar por n milisegundos
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -89,6 +90,7 @@ void toggleSerial_gps(bool enable);
 void keep_data();
 void configuration_to_confirmation();
  esp_reset_reason_t reason;
+ bool cont_to_led = 0;
 //---------------------------------------------------------
 void setup()
 {
@@ -138,19 +140,24 @@ void setup()
 
 void loop(){
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); //saí do modo sleep mode quando time * factor
-  if(reason != ESP_RST_DEEPSLEEP){
+  cont_to_led = 1; //para controlar se sistema foi reiniciado manualmente ou n
+  if(reason != ESP_RST_DEEPSLEEP){ // se não foi acordado ele envia HELLO
+    cont_to_led = 0;
     digitalWrite(status_sensor_lora,HIGH); //liga LoRa
     Serial.println("[SISTEMA REINICIADO] -> ENVIAR PACOTE HELLO");
     send_hello(); //função para mandar um hello e encontrar o gateway;
-    goto wait_confirmation;
+    led_to_send(); //pisca led
+    goto wait_confirmation; // vai para confirmação de recebimento 
   }
+  
   Serial.println("=======ESP ACORDADO========="); //debug serial.print
   //Serial.println(lora.readString()); // para conferir o endereco do modulo
   // Capturando dados GPS
   Serial.println("Processando/aguardando dados GPS");
 
-  now = millis(); // iniciando função para contagem
-  while (gpsSerial.available()){ // Entra no laço se comunicação está ok
+  now = millis(); // iniciando função para contagem 
+  while (gpsSerial.available()){ // Entra no laço se comunicação está ok e numero de requisições ao GPS menor que o estabelecido
+    
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
       gps.encode(gpsSerial.read()); //interpreta dados brutos
       read_all_data_gps(); //lê todos os dados
@@ -159,18 +166,18 @@ void loop(){
       if(lat != 0 && lon != 0){
         Serial.println("Coordenadas encontradas");
         break; // loop para aguardar latitude e longitude
-      }
-      if(counter_gps_cicle >= n_cicles_gps ){
-        Serial.println("\nCoordenadas não encontradas"); // informa essa condição
+      } else
+      if(millis() >= now+time_gps_wait){
+        Serial.println("Coordenadas não encontradas"); // informa essa condição
         digitalWrite(status_sensors,LOW); //desliga todos os sensores (DHT21, L80 ADXL345) (NÃO SERÃO UTILIZADOS)
         gps_standby();
         goto without_lat_lon; //programa pula envio ou não de pacote antigos 
         break;
       }
-      counter_gps_cicle++;
       delay(delay_read_gps);
     }
   }
+  Serial.println("DEBUG");
   gps_standby(); //coloca o gps em standby
   //------------------------------------
   // status da bateria (funççao externa)
@@ -251,6 +258,7 @@ void loop(){
       }
     }
     if(incomingString != NULL){ // se chegou algum dado
+      if (cont_to_led) {led_to_send();led_to_send();} //pisca duas vezes para mostra se chegou a confirmação
       Serial.println(incomingString); // mostra dado
       char dataArray[50]; // vetor para trabalhar com informação
       incomingString.toCharArray(dataArray, 50); //transforma string em char
@@ -350,9 +358,6 @@ void reen_data(){ //funcao para reenviar dados
   Serial.println(mensagem);
   Serial.println(lora.readString()); //lê a resposta do módulo
   toggleSerial_lora(false); //DEsliga Serial
-  //-----------------------------------
-  //led para indicar envio
-  led_to_send();
 }
 
 void toggleSerial_lora(bool enable){ //funcao ligar/desligar comunicao com LORA
