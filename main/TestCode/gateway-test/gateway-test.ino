@@ -23,6 +23,7 @@ bool flag_mqtt = false; //flag para garantir envio do pacote.
 const int mqttPort = 1883;
 const char *mqttUser = "USUARIO_DO_BROKER";
 const char *mqttPassword = "SENHA_DO_BROKER";
+const char *topic = "IPB/TESTE/TRACKER/01";
 PubSubClient client(espClient);
 char *RSSI_LoRA;
 
@@ -45,7 +46,7 @@ char markers[12];// = "ABCDEFGHIJK";  // J indica o fim da string
 
 char *data; // para armazenar as informações que chegam
 char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
-char utctime[20]; //vetor que vai receber time
+char utctime[25]; //vetor que vai receber time
 char latlon[2][10]; //veotor para receber latitude e longitude
 char last_data[] = "K"; //Caracter para conferir se o pacote é da memoria (UTC Time Format has a Z)  
 char find_gatway[] = "O"; //mensagem que device envia para encontrar gatway
@@ -67,11 +68,15 @@ void setup()
   lora.println("AT+ADDRESS?"); // para conferir o endereco do modulo
   Serial.println(lora.readString()); // para conferir o endereco do modulo
   //------------------------------------
-  // definições WIFI/MQTT
+  // definições WIFI
   //setup_wifi();
+  //------------------------------------
+  WiFi.mode(WIFI_STA);
   WiFiManager Gatway; //objeto do tipo wifimeneger 
+  //Gatway.resetSettings();
   bool res;
-  res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
+  //res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
+  res = Gatway.autoConnect("Gatway_ESP32"); // sem senha
   if(!res) {
     Serial.println("Failed to connect");
     // ESP.restart();
@@ -80,14 +85,15 @@ void setup()
     //if you get here you have connected to the WiFi    
     Serial.println("connected...yeey :)");
   }
-    
-  client.setServer(mqttServer, mqttPort);
+  //------------------------------------
+  //MQTT 
+  client.setServer(mqttServer, mqttPort); //define servidor e porta
   //------------------------------------
   // outros pinos
   pinMode(led_to_rec,OUTPUT);
   digitalWrite(led_to_rec, LOW);//Desliga led
   //------------------------------------
-  //millis
+  //millis para processos em loop
   time_break_line = millis();
   time_show_msg = millis();
 }
@@ -112,7 +118,8 @@ void loop(){
     //----------------------------------------------
     toggleSerial(false); // Desliga a comunicação serial para não haver interrupções indesejadas
     //----------------------------------------------
-
+    led_to_send(); //led para indicar que chegou algo
+    //----------------------------------------------
     char dataArray[100]; //vetor que vai receber string
     incomingString.toCharArray(dataArray, 100); //método para atribui string a vetor
     data = strtok(dataArray, ",");
@@ -131,28 +138,28 @@ void loop(){
 
     for (i = 0;data[i] != '\0'; i++){
       if (strchr(find_gatway,data[i])){ //se device estver procurando o gatwat
-        type_data = 2; //flag para indicar que o pacote é passado
+        type_data = 1; //flag para indicar que o pacote é passado
         break;
       }
       if(strchr(last_data,data[i])){ // exsitir "Z" no pacote o dado é passado
         
         sprintf(markers, "ABCDEFGHIK"); //atribui K como ultimo caracter (depois do horario)
-        type_data = 1; //flag para indicar que o pacote é passado
+        type_data = 2; //flag para indicar que o pacote é passado
         break;
       }
       else{
         
-        type_data = 0; //flag para pacote em tempo real
+        type_data = 3; //flag para pacote em tempo real
         sprintf(markers, "ABCDEFGHI"); // caso contrario o pacote é em tempo real
       }
     }
     //----------------------------------------------
-    if(type_data == 0){Serial.println("[Pacote atual]");} else //debug
-    if(type_data == 1){Serial.println("[Pacote da memoria]");} //debug
-    if(type_data == 2){Serial.println("[Device procurando gatway]");} //debug
+    if(type_data == 1){Serial.println("[Device procurando gatway]");} else //debug
+    if(type_data == 2){Serial.println("[Pacote da memoria]");} else //debug
+    if(type_data == 3){Serial.println("[Pacote atual]");}  //debug
     //----------------------------------------------
     //pré processamento - lógica para quebrar o pacote em partes se pacote requiser isso
-    if(type_data == 0 || type_data == 0){ // se o pacote for do tipo 0 ou 1
+    if(type_data == 2 || type_data == 3){ // se o pacote for do tipo 2 ou 3
       for (i = 0; data[i] != '\0'; i++){ 
         if (strchr(markers, data[i])) //analisa se o caractere 
         {
@@ -172,35 +179,45 @@ void loop(){
       }
       //----------------------------------------------
       //Organizar formato de hora: 2023-10-05T11:30:44Z
-      convert_time_to_UTC_format();
       //Separar Lat e lon
       separate_lat_and_lon();
+      if (type_data == 2){convert_time_to_UTC_format();}
     }
-    else //se o pacote for de outro tipo ele pula esse laço e faz:
     //------------------------------------
     // imprimir nível da conexão com Wifi
     rssi = WiFi.RSSI();
     Serial.print("Nível de sinal Wi-Fi: ");
     Serial.print(rssi);
     Serial.println(" dBm");
+    for (int i = 0; i < count-1; i++){ // -1 por que J não conta
+    printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
+    }
     //------------------------------------------------------
-    if(type_data == 0) doc["latitude"] = atof(latlon[1]);                  // -- A
-    if(type_data == 0) doc["longitude"] = atof(latlon[2]);                 // -- B
-    if(type_data == 0) doc["vel"] = atof(extractedStrings[2] + 1);         // -- C
-    if(type_data == 0) doc["temperatura"] = atof(extractedStrings[3] + 1); // -- D
-    if(type_data == 0) doc["umidade"] = atof(extractedStrings[4] + 1);     // -- E
-    if(type_data == 0) doc["X"] = atof(extractedStrings[5] + 1);           // -- F
-    if(type_data == 0) doc["Y"] = atof(extractedStrings[6] + 1);           // -- G
-    if(type_data == 0) doc["Z"] = atof(extractedStrings[7] + 1);           // -- H
-    if(type_data == 0) doc["Bat_Perc"] = atof(extractedStrings[8] + 1);    // -- I
-    if(type_data == 1) doc["time"] = utctime;           // -- J
-    if(type_data == 0 || type_data == 2) doc["RSSI_LoRa"] = atof(RSSI_LoRA);
-    if(type_data == 0 || type_data == 2) doc["RSSI_WIFI"] = rssi;
-
+    if(type_data == 2 || type_data == 3){
+      doc["latitude"] = atof(latlon[0]);                  
+      doc["longitude"] = atof(latlon[1]);                 
+      doc["vel"] = atof(extractedStrings[2] + 1);         
+      doc["temperatura"] = atof(extractedStrings[3] + 1); 
+      doc["umidade"] = atof(extractedStrings[4] + 1);    
+      doc["X"] = atof(extractedStrings[5] + 1);           
+      doc["Y"] = atof(extractedStrings[6] + 1);          
+      doc["Z"] = atof(extractedStrings[7] + 1);           
+      doc["Bat_Perc"] = atof(extractedStrings[8] + 1);
+    }    
+    if(type_data == 2) {
+      Serial.println(utctime);
+      doc["time"] = utctime;
+    }           
+    if(type_data == 1 || type_data == 2 || type_data == 3){
+      doc["RSSI_LoRa"] = atof(RSSI_LoRA);
+      doc["RSSI_WIFI"] = rssi;
+    }
+    /*
     // Serializar o objeto JSON em uma string
     if (incomingString.indexOf('\r') != -1) {
     Serial.println("Caracteres \\r encontrados na incomingString.");
     }
+    */
     jsonData = "";
     serializeJson(doc, jsonData);
     Serial.println(jsonData);
@@ -212,7 +229,7 @@ void loop(){
     client.loop();
     //-------------------------------------------
     // Publicar no tópico especificado
-    if (client.publish("IPB/TESTE/TRACKER/01", jsonData.c_str())){ // encaminha json montado!
+    if (client.publish(topic, jsonData.c_str())){ // encaminha json montado!
       Serial.println("Message published successfully");
       delay(200);
       flag_mqtt = true; //se foi publicado a mensagem de confirmação será enviada
@@ -224,7 +241,7 @@ void loop(){
       flag_mqtt = false; //se não foi publicado a mensagem de confirmação não será enviada
     }
     //-------------------------------------------
-    void zerar_extractedStrings(); //para zerar a matriz de dados
+    zerar_extractedStrings(); //para zerar a matriz de dados
     Serial.println("string zerada");
     //-------------------------------------------
     if (flag_mqtt){
@@ -238,8 +255,8 @@ void loop(){
 }
 
 void separate_lat_and_lon(){
-  strncpy(latlon[1] , extractedStrings[1]+1,9);  //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
-  strncpy(latlon[2] , extractedStrings[1]+1+9,9); //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
+  strncpy(latlon[0] , extractedStrings[1]+1,9);  //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
+  strncpy(latlon[1] , extractedStrings[1]+1+9,9); //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
 }
 
 void convert_time_to_UTC_format(){
@@ -273,32 +290,39 @@ void send_confirmation(){
   Serial.println("mandando mensagem de confirmação..");
   Serial.println(lora.readString()); //lê a resposta do módulo
   led_to_send();
+  delay(100);
+  led_to_send();
   Serial.println("[FIM DO PROCESSO] -> AGUARDAR NOVA MENSAGEM");
 }
 
 void led_to_send(){
   digitalWrite(led_to_rec, HIGH); //Liga Led
-  delay(200); //tempo de led ligado
+  delay(100); //tempo de led ligado
   digitalWrite(led_to_rec, LOW);//Desliga led
 }
 
 void zerar_extractedStrings(){ //função para zerar string que armazena os dados
     int i,j;
+    //zerar extractedStrings
     for (i = 0; i < 12; ++i) {
         for (j = 0; j < 21; ++j) {
             extractedStrings[i][j] = '\0';
         }
     }
-    for (i =0; i<21;i++){
+    //zerar utctime
+    for (i =0; i<26;i++){
       utctime[i] = '\0';
     }
+    //zerar latlon
     for(i = 0; i<3;i++){
       for(j =0; j<11;j++){
         latlon[i][j]='\0';
       }
     }
+    //zerando demais variáveis
     RSSI_LoRA = 0;
     rssi = 0;
+    doc.clear(); // Isso apagará todo o conteúdo do documento
 }
 
 bool serialEnabled = true; // Variável de controle para a comunicação serial
@@ -315,30 +339,9 @@ void toggleSerial(bool enable)
   }
 }
 
-
-/*void setup_wifi()
-{
-  delay(10);
-  Serial.println();
-  Serial.print("Conectando-se a ");
-  Serial.println(ssid);
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("Conectado à rede Wi-Fi");
-  Serial.println("Endereço IP: " + WiFi.localIP().toString());
-}
-*/
-
 void reconnect()
 {
+  int cont_to_reset = 0;
   while (!client.connected())
   { 
     client.setServer(mqttServer, mqttPort);
@@ -353,8 +356,13 @@ void reconnect()
     {
       Serial.print("Falha na conexão - Estado: ");
       Serial.print(client.state());
-      Serial.println(" Tentando novamente em 2 segundos");
-      delay(2000);
+      Serial.println(" Tentando novamente em 5 segundos");
+      delay(5000);
+      cont_to_reset++;
+    }
+    if(cont_to_reset >=2){
+      Serial.println("Não foi possivel reconectar ao Broker, reiniciando sistema");
+      ESP.restart();
     }
   }
 }

@@ -37,35 +37,48 @@ String SPIFFS_Utils::readLastValue(const char *filename) {
 }
 
 void SPIFFS_Utils::removeLastValue(const char *filename) {
-    std::vector<String> lines;
+    // Crie um arquivo temporário uma vez
+    File tempFile = SPIFFS.open("/tempfile.txt", "w");
+    if (!tempFile) {
+        Serial.println("Failed to create temporary file for writing");
+        return;
+    }
 
     File file = SPIFFS.open(filename, "r");
     if (!file) {
+        tempFile.close();  // Certifique-se de fechar o arquivo temporário em caso de erro
         Serial.println("Failed to open file for reading");
         return;
     }
 
+    String line;
+    String prevLine;
+
     while (file.available()) {
-        String line = file.readStringUntil('\n');
+        prevLine = line;
+        line = file.readStringUntil('\n');
         if (line.length() > 0) {
-            lines.push_back(line);
+            // Se houver mais linhas após esta, escreva a linha anterior no arquivo temporário
+            if (!prevLine.isEmpty()) {
+                tempFile.print(prevLine);
+                tempFile.print('\n');
+            }
         }
     }
 
+    // Feche ambos os arquivos
     file.close();
+    tempFile.close();
 
-    File newFile = SPIFFS.open(filename, "w");
-    if (!newFile) {
-        Serial.println("Failed to open file for writing");
-        return;
-    }
+    // Exclua o arquivo original
+    SPIFFS.remove(filename);
 
-    for (size_t i = 0; i < lines.size() - 1; i++) {
-        newFile.println(lines[i]);
-    }
-
-    newFile.close();
+    // Renomeie o novo arquivo temporário para o nome do arquivo original
+    SPIFFS.rename("/tempfile.txt", filename);
 }
+
+
+
 
 void SPIFFS_Utils::listFiles() {
     File root = SPIFFS.open("/");
