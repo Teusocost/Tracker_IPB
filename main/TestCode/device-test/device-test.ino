@@ -91,6 +91,8 @@ void configuration_to_confirmation();
 esp_reset_reason_t reason;
 bool cont_to_led = 0;
 //---------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+// SETUP
 void setup(){
   //------------------------------------
   // definições placa
@@ -135,7 +137,10 @@ void setup(){
   digitalWrite(status_sensor_lora, LOW);
 } // FIM SETUP
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+// LOOP - AÇÕES PRINCIPAIS DO CÓDIGO
 void loop(){
+  // INICIO
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); // saí do modo sleep mode quando time * factor
   cont_to_led = 1;                                               // para controlar se sistema foi reiniciado manualmente ou n
   if (reason != ESP_RST_DEEPSLEEP){ // se não foi acordado ele envia HELLO
