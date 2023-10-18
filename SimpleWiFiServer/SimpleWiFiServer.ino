@@ -33,8 +33,6 @@ void loop() {
     client.println("<h1>Dados de Debug</h1>");
 
     // Leitura dos dados do Serial e envio para o cliente
-      int i = 1000;
-
 
       while(1){
           if ( millis()>=i){

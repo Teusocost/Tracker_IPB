@@ -8,7 +8,9 @@
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 1000, counter_gps_cicle = 0, n_cicles_gps = 60; // delay, contador, tempo que o sistema vai ler (delay * n ciclos)
+int delay_read_gps = 1000; // time para ler informações do GNSS
+int time_to_available_gps = 10*1000;
+
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now;             // variavel de controle de tempo
@@ -27,7 +29,7 @@ int tent = 1;             // variavel de controle - n de tentativas
 float time_reenv;         // variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
 unsigned int time_to_resend = 10000;                  // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = time_to_resend * 2; // n de tentativas
+unsigned int time_finish_resend = (time_to_resend + 1000)* 3; // n de tentativas
 String lastValue;
 
 int requiredBufferSize = 0;     // quantidade de bytes que serão enviados (variavel)
@@ -149,7 +151,7 @@ void loop(){
     Serial.println("[SISTEMA REINICIADO] -> ENVIAR PACOTE HELLO");
     send_hello();           // função para mandar um hello e encontrar o gateway;
     led_to_send();          // pisca led
-    goto wait_confirmation; // vai para confirmação de recebimento
+    //goto wait_confirmation; // vai para confirmação de recebimento
   }
 
   Serial.println("=======ESP ACORDADO========="); // debug serial.print
@@ -158,6 +160,17 @@ void loop(){
   Serial.println("Processando/aguardando dados GPS");
 
   now = millis(); // iniciando função para contagem
+  while(!gpsSerial.available()){ //para conferir a conexão com o GPS
+    if(millis()>= now+1000){
+      Serial.println("aguardando acionamento do GNSS");
+    }
+    if(millis() >= now+time_to_available_gps){ // se tempo maior que definido
+      Serial.println("Algo errado com o GNSS");
+      Serial.println("ESP DORIMNDO");
+      security_function();
+    }
+  }
+
   while (gpsSerial.available()){ // Entra no laço se comunicação está ok e numero de requisições ao GPS menor que o estabelecido
 
     if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos

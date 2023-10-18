@@ -8,25 +8,28 @@ void setup() {
 
 void loop() {
   // Obtenha e imprima a frequência atual da CPU em MHz
-  current_freq = getCpuFrequencyMhz();
+  //current_freq = getCpuFrequencyMhz();
   Serial.print("Frequencia da CPU atual: ");
-  Serial.print(current_freq);
+  //Serial.print(current_freq);
   Serial.println(" MHz");
 
   // Altere a frequência da CPU para 80 MHz
   setCpuFrequencyMhz(80);
+  delay(10);
   Serial.println("Alterando a frequência da CPU para 80 MHz.");
 
-  current_freq = getCpuFrequencyMhz();
+  //current_freq = getCpuFrequencyMhz();
   Serial.print("Frequencia da CPU atual: ");
-  Serial.print(current_freq);
+  //Serial.print(current_freq);
   Serial.println(" MHz");
 
   delay(5000); // Aguarde 5 segundos
 
   // Restaure a frequência da CPU para 240 MHz
   setCpuFrequencyMhz(240);
+  delay(10);
   Serial.println("Restaurando a frequência da CPU para 240 MHz.");
+  Serial.println("HELO");
 
   delay(5000); // Aguarde mais 5 segundos
 }
