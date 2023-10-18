@@ -99,6 +99,8 @@ void setup(){
   //------------------------------------
   // definições placa
   Serial.begin(115200);
+  // define a frequencia da CPU em MHz
+  setCpuFrequencyMhz(20);
   // pinos de leds/transistores/leituras de subsistemas
   pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); // indicar envio
   pinMode(status_sensor_lora, OUTPUT);    // status antena lora
@@ -239,10 +241,11 @@ without_lat_lon: // se não houver lat e long sistema já vem para cá
   }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // BLOCO DE CONFIRMAÇÃO DE ENVIO
+
 wait_confirmation:
 
   Serial.println("==========Aguardar confirmacao========="); // debug serial.print
-
+  
   configuration_to_confirmation();
   while (-1){ // laco para receber confirmação
     //--------------------------------
@@ -300,11 +303,15 @@ wait_confirmation:
 
       if (strcmp(conf, "OK") == 0){            // Se a confirmação chegou for a mesma que a esperada
         Serial.println("confirmação chegou!"); // mostra confirmacao
+        setCpuFrequencyMhz(240);
+        delay(10);                             // debug
         delete_ultimate_data();                // funcao para apagr ultima sinal armazenado, se for o caso
         conf = strtok(NULL, ",");              // quebra para conferir qualidade de sinal
-        if (quality_signal_lora(atof(conf))){ // se a qualidade do sinal estiver boa
+        if (quality_signal_lora(atof(conf))){  // se a qualidade do sinal estiver boa
           Serial.println("sinal ta bom");
           lastValue = spiffsUtils.readLastValue("/dados.txt"); // devolve o ultimo valor gravado
+          setCpuFrequencyMhz(20);
+          delay(10);                           // debug
           if (lastValue == NULL){
             Serial.println("não há nada para enviar");
           }

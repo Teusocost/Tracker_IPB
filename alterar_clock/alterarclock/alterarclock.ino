@@ -14,7 +14,7 @@ void loop() {
   Serial.println(" MHz");
 
   // Altere a frequência da CPU para 80 MHz
-  setCpuFrequencyMhz(80);
+  setCpuFrequencyMhz(20);
   delay(10);
   Serial.println("Alterando a frequência da CPU para 80 MHz.");
 
@@ -26,7 +26,7 @@ void loop() {
   delay(5000); // Aguarde 5 segundos
 
   // Restaure a frequência da CPU para 240 MHz
-  setCpuFrequencyMhz(240);
+  setCpuFrequencyMhz(80);
   delay(10);
   Serial.println("Restaurando a frequência da CPU para 240 MHz.");
   Serial.println("HELO");
