@@ -1,8 +1,8 @@
 //pinos usados
 #include <WiFi.h>
 
-const char* ssid = "NOS-2E40";
-const char* password = "2TJA5RZ9";
+const char* ssid = "agents";
+const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
 WiFiServer server(80);
 int c;
 WiFiClient client;

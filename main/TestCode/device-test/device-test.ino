@@ -1,4 +1,6 @@
 //---------------------------------------------------------
+// GRAVE A 20MHz CPU FREQUENCY
+//
 // biblitoecas e variáveis para o GPS = UART
 #include <TinyGPS++.h>
 #include <HardwareSerial.h>
@@ -14,7 +16,7 @@ int time_to_available_gps = 10*1000;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now;             // variavel de controle de tempo
-int time_gps_wait = 60 * 1000; // gps tenta encontrar por n milisegundos
+int time_gps_wait = 10 * 1000; // gps tenta encontrar por n milisegundos
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -241,7 +243,6 @@ without_lat_lon: // se não houver lat e long sistema já vem para cá
   }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // BLOCO DE CONFIRMAÇÃO DE ENVIO
-
 wait_confirmation:
 
   Serial.println("==========Aguardar confirmacao========="); // debug serial.print
@@ -303,15 +304,15 @@ wait_confirmation:
 
       if (strcmp(conf, "OK") == 0){            // Se a confirmação chegou for a mesma que a esperada
         Serial.println("confirmação chegou!"); // mostra confirmacao
-        setCpuFrequencyMhz(240);
+        setCpuFrequencyMhz(240);               // acelera a CPU para processamento de memória
         delay(10);                             // debug
         delete_ultimate_data();                // funcao para apagr ultima sinal armazenado, se for o caso
         conf = strtok(NULL, ",");              // quebra para conferir qualidade de sinal
         if (quality_signal_lora(atof(conf))){  // se a qualidade do sinal estiver boa
-          Serial.println("sinal ta bom");
           lastValue = spiffsUtils.readLastValue("/dados.txt"); // devolve o ultimo valor gravado
-          setCpuFrequencyMhz(20);
+          setCpuFrequencyMhz(20);              // desacelera a CPU
           delay(10);                           // debug
+          Serial.println("sinal ta bom");
           if (lastValue == NULL){
             Serial.println("não há nada para enviar");
           }
@@ -331,6 +332,8 @@ wait_confirmation:
             goto wait_confirmation;                                                                 // retorna para receber confirmação de envio
           }
         }
+        setCpuFrequencyMhz(20);              // desacelera a CPU do mesmo jeito
+        delay(10);                           // debug
         flag_to_delete_last_data = false;
         break; // fecha confirmação
       }
@@ -342,8 +345,7 @@ wait_confirmation:
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // PROCESSOS FINAIS
-
-without_coord:                           // sistema pula para ca se não apresentar coordenadas
+  without_coord:                           // sistema pula para ca se não apresentar coordenadas
   digitalWrite(status_sensor_lora, LOW); // desliga LoRa
   // força o ESP32 entrar em modo SLEEP
   Serial.println(("Sistema entrando em Deep Sleep"));
