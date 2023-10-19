@@ -289,7 +289,7 @@ void led_to_send(){
 void zerar_extractedStrings(){ // função para zerar string que armazena os dados
   int i, j;
   // zerar extractedStrings
-  for (i = 0; i < 12; ++i){
+  for (i = 0; i < 13; ++i){
     for (j = 0; j < 21; ++j){
       extractedStrings[i][j] = '\0';
     }
