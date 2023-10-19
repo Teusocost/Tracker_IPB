@@ -16,7 +16,7 @@ int time_to_available_gps = 10*1000;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now;             // variavel de controle de tempo
-int time_gps_wait = 10 * 1000; // gps tenta encontrar por n milisegundos
+int time_gps_wait = 90 * 1000; // gps tenta encontrar por n milisegundos
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -420,7 +420,7 @@ void toggleSerial_gps(bool enable){ // funcao ligar/desligar comunicao com LORA
 
 void keep_data(){
   Serial.println("dado que serão guardados");
-  sprintf(keep, "%s%i%02i%02i%02i%02i%02iK\n", data, year, month, day, hour, minute, second); // K é o final da mensage,
+  sprintf(keep, "%s%02i%02i%02i%02i%K\n", data,month, day, hour, minute); // K é o final da mensage,
   Serial.println(keep);
   spiffsUtils.appendToFile("/dados.txt", keep); // grava um novo valor em SPIFF
 }

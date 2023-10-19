@@ -187,9 +187,6 @@ void loop(){
       // Organizar formato de hora: 2023-10-05T11:30:44Z
       // Separar Lat e lon
       separate_lat_and_lon();
-      if (type_data == 2){
-        convert_time_to_UTC_format();
-      }
     }
     //------------------------------------
     // imprimir nível da conexão com Wifi
@@ -213,8 +210,7 @@ void loop(){
       doc["Bat_Perc"] = atof(extractedStrings[8] + 1);
     }
     if (type_data == 2){
-      Serial.println(utctime);
-      doc["time"] = utctime;
+      doc["time"] = atof(extractedStrings[9] + 1);
     }
     if (type_data == 1 || type_data == 2 || type_data == 3){
       doc["RSSI_LoRa"] = atof(RSSI_LoRA);
@@ -238,19 +234,18 @@ void loop(){
     client.loop();
     //-------------------------------------------
     // Publicar no tópico especificado
-    if (client.publish(topic, jsonData.c_str()))
-    { // encaminha json montado!
+    if (client.publish(topic, jsonData.c_str(),2)){ // encaminha json montado! QoS = 2
       Serial.println("Message published successfully");
       delay(200);
       flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada
     }
-    else
-    {
+    else{
       Serial.println("Failed to publish message");
       // adicionar aqui o salvamento da mensagem
       delay(200);
       flag_mqtt = false; // se não foi publicado a mensagem de confirmação não será enviada
     }
+    client.endPublish();        //finaliza publicação MQTT
     //-------------------------------------------
     zerar_extractedStrings(); // para zerar a matriz de dados
     Serial.println("string zerada");
@@ -268,27 +263,6 @@ void loop(){
 void separate_lat_and_lon(){
   strncpy(latlon[0], extractedStrings[1] + 1, 9);     //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
   strncpy(latlon[1], extractedStrings[1] + 1 + 9, 9); //+1 para pular o caracter, 9 para recolher os 9 bytes de informação
-}
-
-void convert_time_to_UTC_format(){
-  // Copie a parte da data
-  strncpy(utctime, extractedStrings[9] + 1, 4);         // Copia "2023"
-  utctime[4] = '-';                                     // Adiciona '-'
-  strncpy(utctime + 5, extractedStrings[9] + 1 + 4, 2); // Copia "10"
-  utctime[7] = '-';                                     // Adiciona '-'
-
-  // Copie a parte da hora
-  strncpy(utctime + 8, extractedStrings[9] + 1 + 6, 2);   // Copia "05"
-  utctime[10] = 'T';                                      // Adiciona 'T'
-  strncpy(utctime + 11, extractedStrings[9] + 1 + 8, 2);  // Copia "11"
-  utctime[13] = ':';                                      // Adiciona ':'
-  strncpy(utctime + 14, extractedStrings[9] + 1 + 10, 2); // Copia "30"
-  utctime[16] = ':';                                      // Adiciona ':'
-  strncpy(utctime + 17, extractedStrings[9] + 1 + 12, 2); // Copia "44"
-  utctime[19] = 'Z';                                      // Null-terminate a string
-  utctime[20] = '\0';                                     // Null-terminate a string
-  // Imprima a string resultante
-  printf("Horário com os caracteres adicionados: %s\n", utctime);
 }
 
 void send_confirmation(){
