@@ -61,6 +61,7 @@ unsigned int break_line = 60000;        // 60 segundos (tempo de reinício de fu
 unsigned int time_to_show_point = 1000; //"." é mostrado a cada tempo (milis)
 unsigned long time_break_line;          // variavel de controle
 unsigned long time_show_msg;            // variavel de controle
+
 void setup(){
   Serial.begin(115200);                           // connect serial
   lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
