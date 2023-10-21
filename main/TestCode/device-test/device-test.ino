@@ -16,7 +16,7 @@ int time_to_available_gps = 10*1000;
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now;             // variavel de controle de tempo
-int time_gps_wait = 90 * 1000; // gps tenta encontrar por n milisegundos
+int time_gps_wait = 15 * 1000; // gps tenta encontrar por n milisegundos
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -31,7 +31,7 @@ int tent = 1;             // variavel de controle - n de tentativas
 float time_reenv;         // variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
 unsigned int time_to_resend = 10000;                  // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = (time_to_resend + 1000)* 3; // n de tentativas
+unsigned int time_finish_resend = (time_to_resend + 1000)* 2; // n de tentativas
 String lastValue;
 
 int requiredBufferSize = 0;     // quantidade de bytes que serão enviados (variavel)
@@ -80,7 +80,7 @@ int Percentage;
 // fator de conversão de microsegundos para segundos
 #define uS_TO_S_FACTOR 1000000
 // tempo que o ESP32 ficará em modo sleep (em segundos)
-#define TIME_TO_SLEEP 30
+#define TIME_TO_SLEEP 20
 
 //---------------------------------------------------------
 // funções instanciadas antes que o sistema passe a funcionar
@@ -165,8 +165,9 @@ void loop(){
 
   now = millis(); // iniciando função para contagem
   while(!gpsSerial.available()){ //para conferir a conexão com o GPS
-    if(millis()>= now+1000){
+    if(millis()>= now){
       Serial.println("aguardando acionamento do GNSS");
+      now = millis()+1000;
     }
     if(millis() >= now+time_to_available_gps){ // se tempo maior que definido
       Serial.println("Algo errado com o GNSS");

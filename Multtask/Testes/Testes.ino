@@ -25,7 +25,10 @@ const int mqttPort = 1883;
 const char *mqttUser = "USUARIO_DO_BROKER";
 const char *mqttPassword = "SENHA_DO_BROKER";
 const char *topic = "IPB/TESTE/TRACKER/01";
+const char *topic2 = "IPB/TESTE/GATWAY/01";
+const char *msg_to_status_gatway = "1"; //variavel enviada para informar status da gatway
 PubSubClient client(espClient);
+int time_to_resend_msg_status_gatway = 30000 //tempo em que o esp reenvia ao BD seu status
 char *RSSI_LoRA;
 
 String jsonData = "";         // para receber json
@@ -78,6 +81,11 @@ void setup(){
   lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
   lora.println("AT+ADDRESS?");                    // para conferir o endereco do modulo
   Serial.println(lora.readString());              // para conferir o endereco do modulo
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //ja estavam aqui
+  pinMode(pin_led, OUTPUT);
+  digitalWrite(pin_led, HIGH);
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //------------------------------------
   // definições WIFI
   // setup_wifi();
@@ -87,7 +95,7 @@ void setup(){
   // Gatway.resetSettings();
   bool res;
   // res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
-  res = Gatway.autoConnect("Gatway_ESP32"); // sem senha
+  res = Gatway.autoConnect("Gatway_ESP32","123456789"); // sem senha
   if (!res){
     Serial.println("Failed to connect");
     // ESP.restart();
@@ -95,6 +103,7 @@ void setup(){
   else{
     // if you get here you have connected to the WiFi
     Serial.println("connected...yeey :)");
+    Serial.println(WiFi.localIP());
   }
   //------------------------------------
   // MQTT
@@ -107,10 +116,6 @@ void setup(){
   // millis para processos em loop
   time_break_line = millis();
   time_show_msg = millis();
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //ja estavam aqui
-  pinMode(pin_led, OUTPUT);
-  Serial.println(WiFi.localIP());
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // cria uma tarefa que será executada na função coreTaskZero, com prioridade 1 e execução no núcleo 0
@@ -119,21 +124,21 @@ void setup(){
   // cria uma tarefa que será executada na função coreTaskOne, com prioridade 2 e execução no núcleo 1
   // coreTaskOne: atualizar as informações do display
 
- //   xTaskCreatePinnedToCore(
- //       LocalIP,   /* função que implementa a tarefa */
- //       "coreTaskOne", /* nome da tarefa */
- //       5000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
- //       NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
- //       1,             /* prioridade da tarefa (0 a N) */
- //      NULL,          /* referência para a tarefa (pode ser NULL) */
- //       taskCoreOne);  /* Núcleo que executará a tarefa */
+    xTaskCreatePinnedToCore(
+        publishMQTTtest,   /* função que implementa a tarefa */
+        "coreTaskOne", /* nome da tarefa */
+        5000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
+        NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
+        2,             /* prioridade da tarefa (0 a N) */
+        NULL,          /* referência para a tarefa (pode ser NULL) */
+        taskCoreZero);  /* Núcleo que executará a tarefa */
 
- //   delay(10); // tempo para a tarefa iniciar
+    delay(500); // tempo para a tarefa iniciar
 
     xTaskCreatePinnedToCore(
         debug_led,     /* função que implementa a tarefa */
         "coreTaskTwo", /* nome da tarefa */
-        10000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
+        5000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
         NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
         1,             /* prioridade da tarefa (0 a N) */
         NULL,          /* referência para a tarefa (pode ser NULL) */
@@ -148,7 +153,7 @@ void setup(){
         "coreTaskThree", /* nome da tarefa */
         10000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
         NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
-        2,             /* prioridade da tarefa (0 a N) */
+        3,             /* prioridade da tarefa (0 a N) */
         NULL,          /* referência para a tarefa (pode ser NULL) */
         taskCoreOne); /* Núcleo que executará a tarefa */
     delay(500);        // tempo para a tarefa iniciar
@@ -201,6 +206,18 @@ void LocalIP(void *pvParameters){
   }
 }
 */
+void publishMQTTtest (void *pcParameters){
+  while(true){
+      if (!client.connected()){
+        reconnect();
+      }
+      client.loop();
+    client.loop();
+    client.publish(topic2, msg_to_status_gatway);
+    Serial.println("Test");
+    vTaskDelay(time_to_resend_msg_status_gatway);
+  }
+}
 void debug_led (void *pvParameters){
 
   String taskMessage = "Task running on core ";
