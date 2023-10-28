@@ -11,12 +11,14 @@
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 int delay_read_gps = 1000; // time para ler informações do GNSS
-int time_to_available_gps = 10*1000;
+int time_to_available_gps = 5*1000;
+
 
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now;             // variavel de controle de tempo
-int time_gps_wait = 15 * 1000; // gps tenta encontrar por n milisegundos
+unsigned long now_finish;
+int time_gps_wait = 20 * 1000; // gps tenta encontrar por n milisegundos
 //---------------------------------------------------------
 // biblitoecas e definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -30,8 +32,8 @@ unsigned long time_geral; // variavel de controle - administrar tempo geral de t
 int tent = 1;             // variavel de controle - n de tentativas
 float time_reenv;         // variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;
-unsigned int time_to_resend = 10000;                  // tempo em ms para nova tentativa de envio LoRa
-unsigned int time_finish_resend = (time_to_resend + 1000)* 2; // n de tentativas
+unsigned int time_to_resend = 10*1000;                  // tempo em ms para nova tentativa de envio LoRa
+unsigned int time_finish_resend = (time_to_resend + 3000)* 1; // n de tentativas
 String lastValue;
 
 int requiredBufferSize = 0;     // quantidade de bytes que serão enviados (variavel)
@@ -65,6 +67,7 @@ float temperature = 0, humidity = 0;
 #include <Adafruit_ADXL345_U.h>
 
 // Variáveis para acelerômetro
+sensors_event_t event;
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
 float x = 0, y = 0, z = 0;
 //---------------------------------------------------------
@@ -108,7 +111,8 @@ void setup(){
   pinMode(status_sensor_lora, OUTPUT);    // status antena lora
   pinMode(status_sensors, OUTPUT);        // status sensores
   pinMode(status_battery, OUTPUT);        // status bateria
-  digitalWrite(status_sensors, HIGH);     // liga todos os sensores (DHT21, ADXL345) (permancem sempre ligados)
+  digitalWrite(status_sensors, HIGH);      // desliga todos os sensores (DHT21, ADXL345)
+  
   //------------------------------------
   // Verifique o motivo da reinicialização - feito para definir o estado do sistema, ou seja, para encaminhar ou não um pacote HELLO
   reason = esp_reset_reason();
@@ -156,20 +160,21 @@ void loop(){
     send_hello();           // função para mandar um hello e encontrar o gateway;
     led_to_send();          // pisca led
     //goto wait_confirmation; // vai para confirmação de recebimento
+    digitalWrite(status_sensor_lora, LOW); // liga LoRa
   }
-
   Serial.println("=======ESP ACORDADO========="); // debug serial.print
   // Serial.println(lora.readString()); // para conferir o endereco do modulo
   //  Capturando dados GPS
   Serial.println("Processando/aguardando dados GPS");
 
   now = millis(); // iniciando função para contagem
+  now_finish = now;
   while(!gpsSerial.available()){ //para conferir a conexão com o GPS
     if(millis()>= now){
       Serial.println("aguardando acionamento do GNSS");
       now = millis()+1000;
     }
-    if(millis() >= now+time_to_available_gps){ // se tempo maior que definido
+    if(millis() >= now_finish+time_to_available_gps){ // se tempo maior que definido
       Serial.println("Algo errado com o GNSS");
       Serial.println("ESP DORIMNDO");
       security_function();
@@ -202,20 +207,21 @@ void loop(){
   gps_standby(); // coloca o gps em standby
   //------------------------------------
   // status da bateria (funççao externa)
-
+  test: 
   digitalWrite(status_battery, HIGH); // liga sistema leitura baterias
   batterystatus(Voltage, Percentage);
   digitalWrite(status_battery, LOW); // desliga sistema leitura baterias
   //------------------------------------
   // leitura de temperatura e humidade SHT21
+
   readSHT21Data(temperature, humidity); // Chama a função para ler os dados do sensor SHT21
-  sensors_event_t event;
   accel.getEvent(&event);
   //------------------------------------
   x = event.acceleration.x;          // alecerometro em x
   y = event.acceleration.y;          // alecerometro em y
   z = event.acceleration.z;          // alecerometro em z
   digitalWrite(status_sensors, LOW); // desliga todos os sensores (DHT21, L80 ADXL345)
+  print_vallues();                   // mostra todos os dados obtidos acima
   //-----------------------------------
   // organizar e enviar LoRa - tentativa atua
   if (lat != 0 && lon != 0){                                                                                                                           // caso o sistema pule a conferencia realizada no gps ele n passa dessa parte
@@ -355,6 +361,23 @@ wait_confirmation:
   esp_deep_sleep_start();
 } // fim loop
 
+void print_vallues(){
+  Serial.print("Voltagem: ");
+  Serial.println(Voltage);
+  Serial.print("Percentage: ");
+  Serial.println(Percentage);
+  Serial.print("xyz: ");
+  Serial.print(x);
+  Serial.print(" ");
+  Serial.print(y);
+  Serial.print(" ");
+  Serial.println(z);
+  Serial.print("temperature: ");
+  Serial.println(temperature);
+  Serial.print("humidity: ");
+  Serial.println(humidity);
+}
+
 void send_hello(){                                    // função para mandar um hello e econtrar o gatway
   sprintf(data, "HELLO");                             // envia "hello" para conferir se gateway esta por perto
   requiredBufferSize = snprintf(NULL, 0, "%s", data); // calcula tamanho string
@@ -396,6 +419,7 @@ void reen_data(){          // funcao para reenviar dados
   delay(10);
   Serial.println("enviando pacote LoRa");
   lora.println(mensagem); // manda a mensagem montada para o módulo
+  led_to_send();
   Serial.println(mensagem);
   Serial.println(lora.readString()); // lê a resposta do módulo
   toggleSerial_lora(false);          // DEsliga Serial
@@ -467,13 +491,13 @@ void printallvalues(){
   Serial.println(second);
 }
 
-void security_function(){ // função de seguranca caso algum módulo não for encontrado no sistema
+void security_function() { // função de seguranca caso algum módulo não for encontrado no sistema
   Serial.println("Sistema com mal funcionamento");
   Serial.println("Desligando/adormecendo todos os módulos");
   digitalWrite(status_sensors, LOW);
   digitalWrite(status_battery, LOW);
   digitalWrite(status_sensor_lora, LOW);
   gps_standby();
-  Serial.println("colocando o sistema em standby");
-  esp_deep_sleep_start();
 }
+
+

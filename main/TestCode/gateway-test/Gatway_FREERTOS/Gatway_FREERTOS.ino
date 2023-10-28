@@ -22,13 +22,13 @@ int32_t rssi; // variavel para recever sinal RSSI wifi
 const char *mqttServer = "broker.mqtt-dashboard.com";
 bool flag_mqtt = false; // flag para garantir envio do pacote.
 const int mqttPort = 1883;
-const char *mqttUser = "USUARIO_DO_BROKER";
-const char *mqttPassword = "SENHA_DO_BROKER";
+//const char *mqttUser = "USUARIO_DO_BROKER";
+//const char *mqttPassword = "SENHA_DO_BROKER";
 const char *topic = "IPB/TESTE/TRACKER/01";
 const char *topic2 = "IPB/TESTE/GATWAY/01";
 const char *msg_to_status_gatway = "1"; //variavel enviada para informar status da gatway
 PubSubClient client(espClient);
-int time_to_resend_msg_status_gatway = 30000 //tempo em que o esp reenvia ao BD seu status
+int time_to_resend_msg_status_gatway = 30000; //tempo em que o esp reenvia ao BD seu status
 char *RSSI_LoRA;
 
 String jsonData = "";         // para receber json
@@ -59,7 +59,7 @@ char type_data = 0;            // tipo de dado que está chegando [0] - atual; [
 //---------------------------------------------------------
 #include <Arduino.h>
 // outos pinos do sistema
-#define led_to_rec 21
+#define led_to_rec 12
 // variaveis para função millis (mostrar "." enquanto nao recebe sinal);
 unsigned int break_line = 60000;        // 60 segundos (tempo de reinício de função) (milis)
 unsigned int time_to_show_point = 1000; //"." é mostrado a cada tempo (milis)
@@ -68,7 +68,7 @@ unsigned long time_show_msg;            // variavel de controle
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ja estava aqui
-const uint8_t pin_led = 4;
+const uint8_t pin_led = 25;
 // variaveis que indicam o núcleo
 static uint8_t taskCoreZero = 0;
 static uint8_t taskCoreOne = 1;

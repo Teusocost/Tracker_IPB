@@ -50,7 +50,7 @@ void loop()
       Serial.println("---------------------------");
       read_all_data_gps();
       Serial.println("---------------------------");
-      delay(4000);
+      delay(1000);
     }
   }
 }

@@ -8,7 +8,7 @@
 
 
 /**PINOS DIGITAIS DE ACESSO AO -- ESP32 MASTER -- ********************************************************************************************************/
-const int DHTPIN   =              4;                                 // Sensor DHT11 Pode ser usado as
+const int DHTPIN   =              21;                                 // Sensor DHT11 Pode ser usado as
                                                                      // seguintes portas 3, 4, 5, 12, 13 ou 14
 
 

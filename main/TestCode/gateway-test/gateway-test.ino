@@ -55,7 +55,7 @@ char type_data = 0;            // tipo de dado que está chegando [0] - atual; [
 //---------------------------------------------------------
 #include <Arduino.h>
 // outos pinos do sistema
-#define led_to_rec 21
+#define led_to_rec 12
 // variaveis para função millis (mostrar "." enquanto nao recebe sinal);
 unsigned int break_line = 60000;        // 60 segundos (tempo de reinício de função) (milis)
 unsigned int time_to_show_point = 1000; //"." é mostrado a cada tempo (milis)
@@ -235,7 +235,7 @@ void loop(){
     client.loop();
     //-------------------------------------------
     // Publicar no tópico especificado
-    if (client.publish(topic, jsonData.c_str(),2)){ // encaminha json montado! QoS = 2
+    if (client.publish(topic, jsonData.c_str())){ // encaminha json montado! QoS = 2
       Serial.println("Message published successfully");
       delay(200);
       flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada

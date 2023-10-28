@@ -13,5 +13,5 @@ void loop() {
 
   batterystatus(Voltage,Percentage);
 
-  delay(1000);
+  delay(500);
 }
