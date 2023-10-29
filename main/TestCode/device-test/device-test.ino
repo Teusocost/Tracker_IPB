@@ -6,12 +6,11 @@
 #include <HardwareSerial.h>
 #define rxGPS 16
 #define txGPS 17
-
 // variávies para GPS
 double lat = 0, lon = 0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
-int delay_read_gps = 1000; // time para ler informações do GNSS
-int time_to_available_gps = 5*1000;
+int delay_read_gps = 1000;          // time para coletar informações do GNSS
+int time_to_available_gps = 5*1000; //tempo caso não encontre  módulo
 
 
 HardwareSerial gpsSerial(2);
@@ -20,7 +19,7 @@ unsigned long now;             // variavel de controle de tempo
 unsigned long now_finish;
 int time_gps_wait = 20 * 1000; // gps tenta encontrar por n milisegundos
 //---------------------------------------------------------
-// biblitoecas e definições para o Rylr 998 (LoRa) = UART
+// Definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
 #define txLORA 26
 HardwareSerial lora(1);
@@ -28,32 +27,30 @@ HardwareSerial lora(1);
 #define LED_BUILTIN_MQTT_SEND 2 // pisca led quando envia LoRa
 char end_to_send = '2';         // endereço do lora que vai receber esse pacote
 
-unsigned long time_geral; // variavel de controle - administrar tempo geral de tentativa
-int tent = 1;             // variavel de controle - n de tentativas
-float time_reenv;         // variavel de controle - adminstrar tempo de reenvio
-bool flag_to_delete_last_data = false;
-unsigned int time_to_resend = 10*1000;                  // tempo em ms para nova tentativa de envio LoRa
+unsigned long time_geral;       // variavel de controle - administrar tempo geral de tentativa
+int tent = 1;                   // variavel de controle - n de tentativas
+float time_reenv;               // variavel de controle - adminstrar tempo de reenvio
+bool flag_to_delete_last_data = false;  //variavel para identificar se a mensagem é atual ou antiga
+unsigned int time_to_resend = 10*1000;  // tempo em ms para nova tentativa de envio LoRa
 unsigned int time_finish_resend = (time_to_resend + 3000)* 1; // n de tentativas
-String lastValue;
+String lastValue;                                             // variável que vai receber pacote de dados antigos da memória
 
-int requiredBufferSize = 0;     // quantidade de bytes que serão enviados (variavel)
-char mensagem[120];             // Vetor para mensagem completa
-char data[80];                  // Vetor para apenas variáveis
-char keep[100];                 // Vetor para guardar pacotes com data/hour
-String incomingString = "NULL"; // string que vai receber as informações
-char *searchTerm = "OK";        // mensagem que chega para confirmação
-char *conf;                     // para armazenar as informações que chegam
-
-bool serialEnabled = true; // Variável de controle para a comunicação serial
-
-int min_quality_signal_resend = -50; // qualidade minima do sinal lora para enviar dado da memoria
+int requiredBufferSize = 0;         // quantidade de bytes que serão enviados (variavel)
+char mensagem[120];                 // Vetor para mensagem completa
+char data[80];                      // Vetor para apenas variáveis
+char keep[100];                     // Vetor para guardar pacotes com data/hour
+String incomingString = "NULL";     // string que vai receber as informações
+char *searchTerm = "OK";            // mensagem que chega para confirmação
+char *conf;                         // para armazenar as informações que chegam
+bool serialEnabled = true;          // Variável de controle para a comunicação serial
+int min_quality_signal_resend = -80; // qualidade minima do sinal lora para enviar dado da memoria
 
 //---------------------------------------------------------
 // Armazenamento SPIFFs
 #include "SPIFFS_Utils.h"
 SPIFFS_Utils spiffsUtils;
 //---------------------------------------------------------
-// Bibliotecas e definições para sht21 - I2C
+// Bibliotecas e definições para SHT21 - I2C
 #include <Wire.h>
 #include "sht21.h"
 #define SDA_PIN 21 // Pino SDA (conexão com o SHT21)
@@ -86,24 +83,25 @@ int Percentage;
 #define TIME_TO_SLEEP 20
 
 //---------------------------------------------------------
-// funções instanciadas antes que o sistema passe a funcionar
-#define status_sensor_lora 32
-#define status_sensors 18 // ADXL345 e DHT21
-#define status_battery 4
-void led_to_send();
-void toggleSerial_lora(bool enable);
-void toggleSerial_gps(bool enable);
-void keep_data();
-void configuration_to_confirmation();
-esp_reset_reason_t reason;
-bool cont_to_led = 0;
+// funções instanciadas e outras definições
+#define status_sensor_lora 32         // transistor Lora
+#define status_sensors 18             // Transistor ADXL345 e DHT21
+#define status_battery 4              // Transistor p/ leitura de nível da bateria
+void led_to_send();                   // led para indicar envio lora
+void toggleSerial_lora(bool enable);  // funcao para ligar/desligar comunicação Uart
+void toggleSerial_gps(bool enable);   // funcao para ligar/desligar comunicação Uart
+void keep_data();                     // funcao para salvar pacote se necessário
+void configuration_to_confirmation(); // funcao para ajustar bariáveis antes de entrar no laço de confirmação
+esp_reset_reason_t reason;            // identificar razão da reinicialização do esp
+bool cont_to_led = 0;                 // variável que a indicar se led deve ser acionado ao enviar pacote lora
 //---------------------------------------------------------
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
 void setup(){
   //------------------------------------
   // definições placa
-  Serial.begin(115200);
+  Serial.begin(115200); 
   // define a frequencia da CPU em MHz
   setCpuFrequencyMhz(20);
   // pinos de leds/transistores/leituras de subsistemas
@@ -111,8 +109,8 @@ void setup(){
   pinMode(status_sensor_lora, OUTPUT);    // status antena lora
   pinMode(status_sensors, OUTPUT);        // status sensores
   pinMode(status_battery, OUTPUT);        // status bateria
-  digitalWrite(status_sensors, HIGH);      // desliga todos os sensores (DHT21, ADXL345)
-  
+  digitalWrite(status_sensors, HIGH);     // desliga todos os sensores (DHT21, ADXL345)
+
   //------------------------------------
   // Verifique o motivo da reinicialização - feito para definir o estado do sistema, ou seja, para encaminhar ou não um pacote HELLO
   reason = esp_reset_reason();
