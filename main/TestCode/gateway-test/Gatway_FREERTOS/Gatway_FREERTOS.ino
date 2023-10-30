@@ -15,6 +15,7 @@
 
 // const char* ssid = "agents";
 // const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
+//-------------------------------------------
 
 WiFiClient espClient;
 int32_t rssi; // variavel para recever sinal RSSI wifi
@@ -22,13 +23,13 @@ int32_t rssi; // variavel para recever sinal RSSI wifi
 const char *mqttServer = "broker.mqtt-dashboard.com";
 bool flag_mqtt = false; // flag para garantir envio do pacote.
 const int mqttPort = 1883;
-//const char *mqttUser = "USUARIO_DO_BROKER";
-//const char *mqttPassword = "SENHA_DO_BROKER";
+// const char *mqttUser = "USUARIO_DO_BROKER";
+// const char *mqttPassword = "SENHA_DO_BROKER";
 const char *topic = "IPB/TESTE/TRACKER/01";
 const char *topic2 = "IPB/TESTE/GATWAY/01";
-const char *msg_to_status_gatway = "1"; //variavel enviada para informar status da gatway
+const char *msg_to_status_gatway = "1"; // variavel enviada para informar status da gatway
 PubSubClient client(espClient);
-int time_to_resend_msg_status_gatway = 30000; //tempo em que o esp reenvia ao BD seu status
+int time_to_resend_msg_status_gatway = 30000; // tempo em que o esp reenvia ao BD seu status
 char *RSSI_LoRA;
 
 String jsonData = "";         // para receber json
@@ -91,11 +92,12 @@ void setup(){
   // setup_wifi();
   //------------------------------------
   WiFi.mode(WIFI_STA);
-  WiFiManager Gatway; // objeto do tipo wifimeneger
+  WiFiManager wm; // objeto do tipo wifimeneger
   // Gatway.resetSettings();
   bool res;
   // res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
-  res = Gatway.autoConnect("Gatway_ESP32","123456789"); // sem senha
+  wm.setConfigPortalTimeout(30); // auto close configportal after n seconds
+  res = wm.autoConnect("Gatway_ESP32","123456789"); // sem senha
   if (!res){
     Serial.println("Failed to connect");
     // ESP.restart();
@@ -162,50 +164,6 @@ void setup(){
 
 void loop(){}
 
-// essa função ficará mudando o estado do led a cada 1 segundo
-// e a cada piscada (ciclo acender e apagar) incrementará nossa variável blinked
-
-
-// essa função será responsável apenas por atualizar as informações no
-// display a cada 100ms
-/*
-void LocalIP(void *pvParameters){
-
-  String taskMessage = "Task running on core ";
-  taskMessage = taskMessage + xPortGetCoreID();
-
-  int i = 1000; //time para reprintar '.'
-  while (true){
-    espClient = server.available();
-    digitalWrite(pin_led, LOW);
-    if (espClient){
-      // digitalWrite(pin_led, HIGH);
-      while(1){
-        digitalWrite(pin_led, LOW);
-        espClient.println("Cliente conectado");
-        espClient.println("HTTP/1.1 200 OK");
-        espClient.println("Content-Type: text/html");
-        espClient.println();
-        espClient.println("<html><body>");
-        espClient.println("<h1>GATWAY ESP32</h1>");
-
-        if (Serialout != "\0"){
-          espClient.println("<br>");
-          espClient.println(Serialout);
-          espClient.println("<br>");
-          Serialout = "\0";
-        }
-        espClient.println("</body></html>");
-        espClient.stop();
-        Serial.println("Cliente desconectado");
-        if (!espClient){
-          break;
-        }
-      }
-    }
-  }
-}
-*/
 void publishMQTTtest (void *pcParameters){
   while(true){
       if (!client.connected()){
@@ -227,7 +185,8 @@ void debug_led (void *pvParameters){
   while (true){
     if(WiFi.status() != WL_CONNECTED){
       digitalWrite(pin_led, HIGH);
-      
+      vTaskDelay(500);
+      digitalWrite(pin_led, LOW);
     }
     else{
       digitalWrite(pin_led, LOW);
@@ -377,7 +336,7 @@ void processing(void *pvParameters){
       client.loop();
       //-------------------------------------------
       // Publicar no tópico especificado
-      if (client.publish(topic, jsonData.c_str(),2)){ // encaminha json montado! QoS = 2
+      if (client.publish(topic, jsonData.c_str())){ // encaminha json montado! QoS = 2
         Serial.println("Message published successfully");
         delay(200);
         flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada
