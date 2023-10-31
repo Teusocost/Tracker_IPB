@@ -23,8 +23,8 @@ int32_t rssi; // variavel para recever sinal RSSI wifi
 const char *mqttServer = "broker.mqtt-dashboard.com";
 bool flag_mqtt = false; // flag para garantir envio do pacote.
 const int mqttPort = 1883;
-// const char *mqttUser = "USUARIO_DO_BROKER";
-// const char *mqttPassword = "SENHA_DO_BROKER";
+const char *mqttUser = "IPB";
+const char *mqttPassword = "noiottracker";
 const char *topic = "IPB/TESTE/TRACKER/01";
 const char *topic2 = "IPB/TESTE/GATWAY/01";
 const char *msg_to_status_gatway = "1"; // variavel enviada para informar status da gatway
@@ -105,7 +105,7 @@ void setup(){
   else{
     // if you get here you have connected to the WiFi
     Serial.println("connected...yeey :)");
-    Serial.println(WiFi.localIP());
+    //Serial.println(WiFi.localIP());  // Mostrar o IP (wifi manager ja faz isso)
   }
   //------------------------------------
   // MQTT
@@ -430,8 +430,8 @@ void reconnect(){
     client.setServer(mqttServer, mqttPort);
     Serial.print("Conectando ao broker MQTT...");
 
-    // if (client.connect("ESP32Client", mqttUser, mqttPassword))
-    if (client.connect("ESP32Client")){
+    //if (client.connect("ESP32Client")){
+    if (client.connect("ESP32Client", mqttUser, mqttPassword)){
       Serial.println("Conectado");
       // client.subscribe("TOPICO_SUBSCRIBER");
     }
