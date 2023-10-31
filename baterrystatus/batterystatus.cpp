@@ -4,7 +4,7 @@
 #define analogInPin 33 // porta que vai ler o nível da bateria
 
 int sensorValue;
-float calibration = 0.44; // Check Battery voltage using multimeter & add/subtract the value
+float calibration = 0.41; // Check Battery voltage using multimeter & add/subtract the value
 
 
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max)

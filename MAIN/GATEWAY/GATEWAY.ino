@@ -172,7 +172,7 @@ void publishMQTTtest (void *pcParameters){
       client.loop();
     client.loop();
     client.publish(topic2, msg_to_status_gatway);
-    Serial.println("Test");
+    Serial.println("STATUS GATWAY ENVIADO");
     vTaskDelay(time_to_resend_msg_status_gatway);
   }
 }
@@ -428,7 +428,7 @@ void reconnect(){
   int cont_to_reset = 0;
   while (!client.connected()){
     client.setServer(mqttServer, mqttPort);
-    Serial.print("Conectando ao broker MQTT...");
+    Serial.println("Conectando ao broker MQTT...");
 
     //if (client.connect("ESP32Client")){
     if (client.connect("ESP32Client", mqttUser, mqttPassword)){
