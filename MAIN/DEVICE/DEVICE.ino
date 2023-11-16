@@ -7,7 +7,7 @@
 #define rxGPS 16
 #define txGPS 17
 // variávies para GPS
-double lat = 0, lon = 0;
+double lat = 0.0, lon = 0.0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 int delay_read_gps = 1000;          // time para coletar informações do GNSS
 int time_to_available_gps = 5*1000; //tempo caso não encontre  módulo
@@ -17,7 +17,7 @@ HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 unsigned long now;             // variavel de controle de tempo
 unsigned long now_finish;
-int time_gps_wait = 20 * 1000; // gps tenta encontrar por n milisegundos
+int time_gps_wait = 60 * 1000; // gps tenta encontrar por n milisegundos
 //---------------------------------------------------------
 // Definições para o Rylr 998 (LoRa) = UART
 #define rxLORA 25
@@ -57,7 +57,7 @@ SPIFFS_Utils spiffsUtils;
 #define SCL_PIN 22 // Pino SCL (conexão com o SHT21)
 
 // variávies para sht21
-float temperature = 0, humidity = 0;
+float temperature = 0.0, humidity = 0.0;
 //---------------------------------------------------------
 // Acelerometro - I2C
 #include <Adafruit_Sensor.h>
@@ -66,7 +66,7 @@ float temperature = 0, humidity = 0;
 // Variáveis para acelerômetro
 sensors_event_t event;
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
-float x = 0, y = 0, z = 0;
+float x = 0.0, y = 0.0, z = 0.0;
 //---------------------------------------------------------
 // Leitura de status da bateria
 #include "batterystatus.h"
@@ -205,7 +205,6 @@ void loop(){
   gps_standby(); // coloca o gps em standby
   //------------------------------------
   // status da bateria (funççao externa)
-  test: 
   digitalWrite(status_battery, HIGH); // liga sistema leitura baterias
   batterystatus(Voltage, Percentage);
   digitalWrite(status_battery, LOW); // desliga sistema leitura baterias
