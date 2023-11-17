@@ -1,9 +1,9 @@
 #include <HardwareSerial.h>
-#define rxGPS 25
-#define txGPS 26
+#define rxGPS 16
+#define txGPS 17
 
 HardwareSerial lora(1); //n das portas Uart do esp
-char end_to_send = '2';   // endereço do lora que vai recever esse pacote
+char end_to_send = '1';   // endereço do lora que vai recever esse pacote
 void setup()
 {
   Serial.begin(115200);

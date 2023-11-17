@@ -139,9 +139,17 @@ void setup(){
   // LoRa
   toggleSerial_lora(true); // comunicacao GPS ligada
   digitalWrite(status_sensor_lora, HIGH);
-  delay(100);
-  lora.println("AT+ADDRESS?");       // para conferir o endereco do modulo
-  Serial.println(lora.readString()); // para conferir o endereco do modulo
+  delay(100); 
+  if (reason != ESP_RST_DEEPSLEEP){
+    lora.println("AT+ADDRESS?");                    // para conferir o endereco do modulo
+    Serial.println(lora.readString());              // para conferir o endereco do modulo
+    delay(20);
+    lora.println("AT+BAND?");                       // para conferir a BANDA do modulo
+    Serial.println(lora.readString());              // para conferir o BANDA do modulo
+    delay(20);
+    lora.println("AT+NETWORKID?");                  // para conferir o GRUPO do modulo
+    Serial.println(lora.readString());              // para conferir o GRUPO do modulo
+  }
   digitalWrite(status_sensor_lora, LOW);
 } // FIM SETUP
 

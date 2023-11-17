@@ -23,11 +23,12 @@ int32_t rssi; // variavel para recever sinal RSSI wifi
 const char *mqttServer = "broker.mqtt-dashboard.com";
 bool flag_mqtt = false; // flag para garantir envio do pacote.
 const int mqttPort = 1883;
-const char *mqttUser = "IPB";
-const char *mqttPassword = "noiottracker";
-const char *topic = "IPB/TESTE/TRACKER/01";
-const char *topic2 = "IPB/TESTE/GATWAY/01";
-const char *msg_to_status_gatway = "1"; // variavel enviada para informar status da gatway
+const char *mqttUser = "IPB";               // usuário topico
+const char *mqttPassword = "noiottracker";  // senha topico
+const char *topic = "IPB/TESTE/TRACKER/01"; // topico para enviar os pacotes
+const char *topic2 = "IPB/TESTE/GATWAY/01"; // topico para enviar status gatway
+char flat_network = false;                  // Flat devolvida pelo node-red
+const char *msg_to_status_gatway = "1";     // variavel enviada para informar status da gatway
 PubSubClient client(espClient);
 int time_to_resend_msg_status_gatway = 30000; // tempo em que o esp reenvia ao BD seu status
 char *RSSI_LoRA;
@@ -77,27 +78,30 @@ static uint8_t taskCoreOne = 1;
 
 void setup(){
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //adquirido do outro .ino
+  //Lora
   Serial.begin(115200);                           // connect serial
   lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
   lora.println("AT+ADDRESS?");                    // para conferir o endereco do modulo
   Serial.println(lora.readString());              // para conferir o endereco do modulo
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //ja estavam aqui
+  delay(20);
+  lora.println("AT+BAND?");                    // para conferir a BANDA do modulo
+  Serial.println(lora.readString());              // para conferir o BANDA do modulo
+  delay(20);
+  lora.println("AT+NETWORKID?");                    // para conferir o GRUPO do modulo
+  Serial.println(lora.readString());              // para conferir o GRUPO do modulo
+  //------------------------------------
+  //Pins indicadores
   pinMode(pin_led, OUTPUT);
   digitalWrite(pin_led, HIGH);
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //------------------------------------
   // definições WIFI
-  // setup_wifi();
-  //------------------------------------
   WiFi.mode(WIFI_STA);
   WiFiManager wm; // objeto do tipo wifimeneger
   // Gatway.resetSettings();
   bool res;
   // res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
   wm.setConfigPortalTimeout(30); // auto close configportal after n seconds
-  res = wm.autoConnect("Gatway_ESP32","123456789"); // sem senha
+  res = wm.autoConnect("Gatway_ESP32","123456789"); // com senha para acessar o ESP
   if (!res){
     Serial.println("Failed to connect");
     // ESP.restart();
@@ -110,6 +114,7 @@ void setup(){
   //------------------------------------
   // MQTT
   client.setServer(mqttServer, mqttPort); // define servidor e porta
+  client.setCallback(callback);           // define callback para receber msg de confirmação
   //------------------------------------
   // outros pinos
   pinMode(led_to_rec, OUTPUT);
@@ -119,13 +124,7 @@ void setup(){
   time_break_line = millis();
   time_show_msg = millis();
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // cria uma tarefa que será executada na função coreTaskZero, com prioridade 1 e execução no núcleo 0
-  // coreTaskZero: piscar LED e contar quantas vezes
-
-  // cria uma tarefa que será executada na função coreTaskOne, com prioridade 2 e execução no núcleo 1
-  // coreTaskOne: atualizar as informações do display
-
+  // Definicao das tarefas
     xTaskCreatePinnedToCore(
         publishMQTTtest,   /* função que implementa a tarefa */
         "coreTaskOne", /* nome da tarefa */
@@ -136,7 +135,7 @@ void setup(){
         taskCoreZero);  /* Núcleo que executará a tarefa */
 
     delay(500); // tempo para a tarefa iniciar
-
+  //------------------------------------
     xTaskCreatePinnedToCore(
         debug_led,     /* função que implementa a tarefa */
         "coreTaskTwo", /* nome da tarefa */
@@ -145,11 +144,8 @@ void setup(){
         1,             /* prioridade da tarefa (0 a N) */
         NULL,          /* referência para a tarefa (pode ser NULL) */
         taskCoreZero);  /* Núcleo que executará a tarefa */
- //
     delay(500); // tempo para a tarefa iniciar
- //
- //   // cria uma tarefa que será executada na função coreTaskTwo, com prioridade 2 e execução no núcleo 0
- //   // coreTaskTwo: vigiar o botão para detectar quando pressioná-lo
+  //------------------------------------
     xTaskCreatePinnedToCore(
         processing,   /* função que implementa a tarefa */
         "coreTaskThree", /* nome da tarefa */
@@ -159,23 +155,25 @@ void setup(){
         NULL,          /* referência para a tarefa (pode ser NULL) */
         taskCoreOne); /* Núcleo que executará a tarefa */
     delay(500);        // tempo para a tarefa iniciar
-  
-}
+  //------------------------------------
+} // fim setup()
 
-void loop(){}
-
+void loop(){} //não executa nada
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Tarefa 1 
 void publishMQTTtest (void *pcParameters){
   while(true){
       if (!client.connected()){
         reconnect();
       }
-      client.loop();
     client.loop();
     client.publish(topic2, msg_to_status_gatway);
-    Serial.println("STATUS GATWAY ENVIADO");
+    Serial.println("\nSTATUS GATWAY ENVIADO");
     vTaskDelay(time_to_resend_msg_status_gatway);
   }
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Tarefa 2
 void debug_led (void *pvParameters){
 
   String taskMessage = "Task running on core ";
@@ -195,8 +193,8 @@ void debug_led (void *pvParameters){
   }
 }
 
-// essa função será responsável por ler o estado do botão
-// e atualizar a variavel de controle.
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Tarefa 3
 void processing(void *pvParameters){
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
@@ -334,6 +332,7 @@ void processing(void *pvParameters){
         reconnect();
       }
       client.loop();
+
       //-------------------------------------------
       // Publicar no tópico especificado
       if (client.publish(topic, jsonData.c_str())){ // encaminha json montado! QoS = 2
@@ -428,12 +427,11 @@ void reconnect(){
   int cont_to_reset = 0;
   while (!client.connected()){
     client.setServer(mqttServer, mqttPort);
-    Serial.println("Conectando ao broker MQTT...");
+    Serial.println("\nConectando ao broker MQTT...");
 
     //if (client.connect("ESP32Client")){
     if (client.connect("ESP32Client", mqttUser, mqttPassword)){
-      Serial.println("Conectado");
-      // client.subscribe("TOPICO_SUBSCRIBER");
+      Serial.println("\nConectado");
     }
     else{
       Serial.print("Falha na conexão - Estado: ");
@@ -444,6 +442,7 @@ void reconnect(){
     }
     if (cont_to_reset >= 2){
       Serial.println("Não foi possivel reconectar ao Broker, reiniciando sistema");
+      Serial.println("=======================================");
       ESP.restart();
     }
   }
