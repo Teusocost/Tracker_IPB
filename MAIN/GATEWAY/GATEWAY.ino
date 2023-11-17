@@ -114,7 +114,7 @@ void setup(){
   //------------------------------------
   // MQTT
   client.setServer(mqttServer, mqttPort); // define servidor e porta
-  client.setCallback(callback);           // define callback para receber msg de confirmação
+  //client.setCallback(callback);           // define callback para receber msg de confirmação
   //------------------------------------
   // outros pinos
   pinMode(led_to_rec, OUTPUT);
