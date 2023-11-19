@@ -327,7 +327,13 @@ void processing(void *pvParameters){
       jsonData = "";
       serializeJson(doc, jsonData); // Serializa o pacote json
       Serial.println(jsonData);     // imprime o json montado que será encaminhado via MQTT
-
+      //---------------------------
+      // confere conexão
+      if (!client.connected())
+      {
+        reconnect();
+      }
+      client.loop();
       //-------------------------------------------
       // Publicar no tópico especificado
       if (client.publish(topic, jsonData.c_str())){ // encaminha json montado! QoS = 0
@@ -426,7 +432,7 @@ void reconnect(){
 
     //if (client.connect("ESP32Client")){
     if (client.connect("ESP32Client", mqttUser, mqttPassword)){
-      Serial.println("Conectado");
+      Serial.println("\nConectado");
     }
     else{
       Serial.print("Falha na conexão - Estado: ");
