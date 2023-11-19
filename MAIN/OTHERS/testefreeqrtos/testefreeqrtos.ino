@@ -27,6 +27,7 @@ const char *mqttUser = "IPB";               // usuário topico
 const char *mqttPassword = "noiottracker";  // senha topico
 const char *topic = "IPB/TESTE/TRACKER/01"; // topico para enviar os pacotes
 const char *topic2 = "IPB/TESTE/GATWAY/01"; // topico para enviar status gatway
+const char *topic3 = "IPB/TESTE/GATWAY/01"; // topico para receber msg
 char flat_network = false;                  // Flat devolvida pelo node-red
 const char *msg_to_status_gatway = "1";     // variavel enviada para informar status da gatway
 PubSubClient client(espClient);
@@ -114,7 +115,7 @@ void setup(){
   //------------------------------------
   // MQTT
   client.setServer(mqttServer, mqttPort); // define servidor e porta
-  //client.setCallback(callback);           // define callback para receber msg de confirmação
+  client.setCallback(callback);           // define callback para receber msg de confirmação
   //------------------------------------
   // outros pinos
   pinMode(led_to_rec, OUTPUT);
@@ -128,9 +129,9 @@ void setup(){
     xTaskCreatePinnedToCore(
         publishMQTTtest,   /* função que implementa a tarefa */
         "coreTaskOne", /* nome da tarefa */
-        5000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
+        2048,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
         NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
-        2,             /* prioridade da tarefa (0 a N) */
+        1,             /* prioridade da tarefa (0 a N) */
         NULL,          /* referência para a tarefa (pode ser NULL) */
         taskCoreZero);  /* Núcleo que executará a tarefa */
 
@@ -139,19 +140,29 @@ void setup(){
     xTaskCreatePinnedToCore(
         debug_led,     /* função que implementa a tarefa */
         "coreTaskTwo", /* nome da tarefa */
-        5000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
+        2048,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
         NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
-        1,             /* prioridade da tarefa (0 a N) */
+        2,             /* prioridade da tarefa (0 a N) */
         NULL,          /* referência para a tarefa (pode ser NULL) */
         taskCoreZero);  /* Núcleo que executará a tarefa */
     delay(500); // tempo para a tarefa iniciar
   //------------------------------------
-    xTaskCreatePinnedToCore(
-        processing,   /* função que implementa a tarefa */
+      xTaskCreatePinnedToCore(
+        receiver_mqtt,   /* função que implementa a tarefa */
         "coreTaskThree", /* nome da tarefa */
-        10000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
+        2048,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
         NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
         3,             /* prioridade da tarefa (0 a N) */
+        NULL,          /* referência para a tarefa (pode ser NULL) */
+        taskCoreOne); /* Núcleo que executará a tarefa */
+    delay(500);        // tempo para a tarefa iniciar
+  //------------------------------------
+    xTaskCreatePinnedToCore(
+        processing,   /* função que implementa a tarefa */
+        "coreTaskFour", /* nome da tarefa */
+        10000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
+        NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
+        4,             /* prioridade da tarefa (0 a N) */
         NULL,          /* referência para a tarefa (pode ser NULL) */
         taskCoreOne); /* Núcleo que executará a tarefa */
     delay(500);        // tempo para a tarefa iniciar
@@ -192,9 +203,36 @@ void debug_led (void *pvParameters){
     vTaskDelay(1000);
   }
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tarefa 3
+void receiver_mqtt(void *pvParameters){
+
+  String taskMessage = "Task running on core ";
+  taskMessage = taskMessage + xPortGetCoreID();
+
+  while (true){
+    if (!client.connected()){
+      reconnect();
+    }
+    client.loop();
+    vTaskDelay(1000);
+  }
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i=0;i<length;i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Tarefa 4
 void processing(void *pvParameters){
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
@@ -226,7 +264,8 @@ void processing(void *pvParameters){
       data = strtok(NULL, ",");
       RSSI_LoRA = &*data; // para pegar o RSSI do sinal lora
       RSSI_LoRA = strtok(NULL, ",");
-      //Serial.println(data);  // imprime pacote recebido (sem outros detalhes)
+      // Serial.println(incomingString);
+      Serial.println(data);
 
       //----------------------------------------------
       // Dividir data em pacotes
@@ -252,15 +291,15 @@ void processing(void *pvParameters){
       }
       //----------------------------------------------
       if (type_data == 1){
-        Serial.println("TIPO -> [Device procurando gatway]");
+        Serial.println("[Device procurando gatway]");
       }
       else // debug
         if (type_data == 2){
-          Serial.println("TIPO -> [Pacote da memoria]");
+          Serial.println("[Pacote da memoria]");
         }
         else // debug
           if (type_data == 3){
-            Serial.println("TIPO -> [Pacote atual]");
+            Serial.println("[Pacote atual]");
           } // debug
       //----------------------------------------------
       // pré processamento - lógica para quebrar o pacote em partes se pacote requiser isso
@@ -293,13 +332,10 @@ void processing(void *pvParameters){
       Serial.print("Nível de sinal Wi-Fi: ");
       Serial.print(rssi);
       Serial.println(" dBm");
-      //------------------------------------
-      // imprimir dados recebidos após pré processamento
       for (int i = 0; i < count - 1; i++){ // -1 por que J não conta
         printf("dado %c: %s\n", extractedStrings[i + 1][0], extractedStrings[i + 1] + 1);
       }
       //------------------------------------------------------
-      //atribuição de dado ao pacote Json
       if (type_data == 2 || type_data == 3){
         doc["latitude"] = atof(latlon[0]);
         doc["longitude"] = atof(latlon[1]);
@@ -325,12 +361,19 @@ void processing(void *pvParameters){
       }
       */
       jsonData = "";
-      serializeJson(doc, jsonData); // Serializa o pacote json
-      Serial.println(jsonData);     // imprime o json montado que será encaminhado via MQTT
+      serializeJson(doc, jsonData);
+      Serial.println(jsonData);
+      //---------------------------
+      // confere conexão
+      if (!client.connected())
+      {
+        reconnect();
+      }
+      client.loop();
 
       //-------------------------------------------
       // Publicar no tópico especificado
-      if (client.publish(topic, jsonData.c_str())){ // encaminha json montado! QoS = 0
+      if (client.publish(topic, jsonData.c_str())){ // encaminha json montado! QoS = 2
         Serial.println("Message published successfully");
         delay(200);
         flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada
@@ -374,7 +417,7 @@ void send_confirmation(){
   led_to_send();
   delay(100);
   led_to_send();
-  Serial.println("========[FIM DO PROCESSO -> AGUARDANDO NOVA MENSAGEM]==========");
+  Serial.println("[FIM DO PROCESSO] -> AGUARDAR NOVA MENSAGEM");
 }
 
 void led_to_send(){
@@ -426,7 +469,8 @@ void reconnect(){
 
     //if (client.connect("ESP32Client")){
     if (client.connect("ESP32Client", mqttUser, mqttPassword)){
-      Serial.println("Conectado");
+      Serial.println("\nConectado");
+      client.subscribe(topic3);
     }
     else{
       Serial.print("Falha na conexão - Estado: ");
