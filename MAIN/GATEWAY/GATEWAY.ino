@@ -336,7 +336,7 @@ void processing(void *pvParameters){
       client.loop();
       //-------------------------------------------
       // Publicar no tópico especificado
-      if (client.publish(topic, jsonData.c_str())){ // encaminha json montado! QoS = 0
+      if (client.publish(topic, jsonData.c_str())){ // encaminha json montado!
         Serial.println("Message published successfully");
         delay(200);
         flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada

@@ -10,7 +10,7 @@
 double lat = 0.0, lon = 0.0;
 int sat = 0, vel = 0, year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
 int delay_read_gps = 1000;          // time para coletar informações do GNSS
-int time_to_available_gps = 5*1000; //tempo caso não encontre  módulo
+int time_to_available_gps = 3*1000; //tempo caso não encontre  módulo GNSS
 
 
 HardwareSerial gpsSerial(2);
@@ -183,7 +183,8 @@ void loop(){
     if(millis() >= now_finish+time_to_available_gps){ // se tempo maior que definido
       Serial.println("Algo errado com o GNSS");
       Serial.println("ESP DORIMNDO");
-      security_function();
+      security_function(); // função para desligar todos os módulos
+      goto finish_process; // não a nada a ser feito, sistema vai para o fim do processo.
     }
   }
 
@@ -251,7 +252,7 @@ without_lat_lon: // se não houver lat e long sistema já vem para cá
 
   else if (lat == 0 && lon == 0 && lastValue == NULL){
     Serial.println("=======[N Ex. memoria - lat e lon N existem]=========");
-    goto without_coord; // não a nada a ser feito, sistema dorme.
+    goto finish_process; // não a nada a ser feito, sistema dorme.
   }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // BLOCO DE CONFIRMAÇÃO DE ENVIO
@@ -276,7 +277,7 @@ wait_confirmation:
     }
     if (millis() - time_geral >= time_finish_resend){     // fim do laço de tentativas
       Serial.println("fim de tentativas");
-      if (lat != 0 && lon != 0 && flag_to_delete_last_data == false){
+      if (lat != 0 && lon != 0 && humidity!= 0 && x > -12 && x < 12 && y > -12 && y < 12 && z > -12 && z < 12 && flag_to_delete_last_data== false ){
         keep_data(); // função para guardar dados em SPIFFS
         // Show_SPIFFS();
         Serial.println("pacote de dados guardado");
@@ -357,7 +358,7 @@ wait_confirmation:
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // PROCESSOS FINAIS
-  without_coord:                           // sistema pula para ca se não apresentar coordenadas
+  finish_process:                           // sistema pula para ca se não apresentar coordenadas
   digitalWrite(status_sensor_lora, LOW); // desliga LoRa
   // força o ESP32 entrar em modo SLEEP
   Serial.println(("Sistema entrando em Deep Sleep"));
