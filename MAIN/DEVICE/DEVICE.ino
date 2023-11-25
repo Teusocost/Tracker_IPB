@@ -27,9 +27,9 @@ HardwareSerial lora(1);
 #define LED_BUILTIN_MQTT_SEND 2 // pisca led quando envia LoRa
 char end_to_send = '2';         // endereço do lora que vai receber esse pacote
 
-unsigned long time_geral;       // variavel de controle - administrar tempo geral de tentativa
+unsigned long time_geral = 0;       // variavel de controle - administrar tempo geral de tentativa
 int tent = 1;                   // variavel de controle - n de tentativas
-float time_reenv;               // variavel de controle - adminstrar tempo de reenvio
+float time_reenv = 0.0;               // variavel de controle - adminstrar tempo de reenvio
 bool flag_to_delete_last_data = false;  //variavel para identificar se a mensagem é atual ou antiga
 unsigned int time_to_resend = 10*1000;  // tempo em ms para nova tentativa de envio LoRa
 unsigned int time_finish_resend = (time_to_resend + 3000)* 1; // n de tentativas
@@ -80,7 +80,7 @@ int Percentage;
 // fator de conversão de microsegundos para segundos
 #define uS_TO_S_FACTOR 1000000
 // tempo que o ESP32 ficará em modo sleep (em segundos)
-#define TIME_TO_SLEEP 20
+#define TIME_TO_SLEEP 30
 
 //---------------------------------------------------------
 // funções instanciadas e outras definições
@@ -164,7 +164,7 @@ void loop(){
     digitalWrite(status_sensor_lora, HIGH); // liga LoRa
     Serial.println("[SISTEMA REINICIADO] -> ENVIAR PACOTE HELLO");
     send_hello();           // função para mandar um hello e encontrar o gateway;
-    led_to_send();          // pisca led
+    //led_to_send();          // pisca led
     //goto wait_confirmation; // vai para confirmação de recebimento
     digitalWrite(status_sensor_lora, LOW); // liga LoRa
   }
@@ -275,7 +275,7 @@ wait_confirmation:
       time_reenv = millis() + time_to_resend; // atualizacao de time
       reen_data();                            // reenvia pacote
     }
-    if (millis() - time_geral >= time_finish_resend){     // fim do laço de tentativas
+    if (millis() >= time_geral){     // fim do laço de tentativas
       Serial.println("fim de tentativas");
       if (lat != 0 && lon != 0 && humidity!= 0 && x > -12 && x < 12 && y > -12 && y < 12 && z > -12 && z < 12 && flag_to_delete_last_data== false ){
         keep_data(); // função para guardar dados em SPIFFS
@@ -385,7 +385,10 @@ void print_vallues(){
 }
 
 void send_hello(){                                    // função para mandar um hello e econtrar o gatway
-  sprintf(data, "HELLO");                             // envia "hello" para conferir se gateway esta por perto
+  digitalWrite(status_battery, HIGH); // liga sistema leitura baterias
+  batterystatus(Voltage, Percentage);
+  digitalWrite(status_battery, LOW); // desliga sistema leitura baterias
+  sprintf(data, "%d",Percentage);                     // envia pacote com nível a bateria para conferir se gateway esta por perto
   requiredBufferSize = snprintf(NULL, 0, "%s", data); // calcula tamanho string
   sprintf(mensagem, "AT+SEND=%c,%i,%s", end_to_send, requiredBufferSize, data);
   reen_data();                                        // funcao para enviar dados
@@ -398,7 +401,7 @@ void gps_standby(){
 
 void configuration_to_confirmation(){
   Serial.println("Aguardando confirmação");
-  time_geral = millis();                  // administrar tempo geral de tentativa
+  time_geral = millis() + time_finish_resend;                  // administrar tempo para todas os envios
   time_reenv = millis() + time_to_resend; // adminstrar tempo de reenvio
   tent = 1;                               // n de tentativas
 }
