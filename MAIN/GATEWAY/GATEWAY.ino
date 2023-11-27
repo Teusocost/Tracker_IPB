@@ -28,13 +28,14 @@ const char *mqttPassword = "noiottracker";  // senha topico
 const char *topic = "IPB/TESTE/TRACKER/01"; // topico para enviar os pacotes
 const char *topic2 = "IPB/TESTE/GATWAY/01"; // topico para enviar status gatway
 char flat_network = false;                  // Flat devolvida pelo node-red
-const char *msg_to_status_gatway = "1";     // variavel enviada para informar status da gatway
 PubSubClient client(espClient);
 int time_to_resend_msg_status_gatway = 30000; // tempo em que o esp reenvia ao BD seu status
 char *RSSI_LoRA;
 
-String jsonData = "";         // para receber json
+String jsonData = "";         // para receber json (pacote)
+String jsonStatus = "";       // para receber json (status gatway)
 DynamicJsonDocument doc(256); // Tamanho do buffer JSON
+DynamicJsonDocument gat(64);  // Buffer Json para encaminhar status gateway
 //---------------------------------------------------------
 // Lora - Uart
 #include <HardwareSerial.h>
@@ -166,10 +167,17 @@ void publishMQTTtest (void *pcParameters){
       if (!client.connected()){
         reconnect();
       }
-    client.loop();
-    client.publish(topic2, msg_to_status_gatway);
-    Serial.println("\nSTATUS GATWAY ENVIADO");
-    vTaskDelay(time_to_resend_msg_status_gatway);
+      client.loop();           // cliente em loop (MQTT)
+      rssi = WiFi.RSSI();      // recebe Rssi WiFi
+      gat["RSSI_WIFI"] = rssi; // atribui ao Json gat
+
+      jsonStatus = "";                // Apaga informações antiga da string
+      serializeJson(gat, jsonStatus); // Serializa o pacote json
+
+      client.publish(topic2, jsonStatus.c_str());            // publica json no tópico especificado
+      Serial.print("\nSTATUS GATWAY ENVIADO - RSSI WIFI: "); // mostra msg de envio
+      Serial.println(rssi);                                  // valor do rssi
+      vTaskDelay(time_to_resend_msg_status_gatway);          // taks dorme por tempo definido
   }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -264,6 +272,14 @@ void processing(void *pvParameters){
           } // debug
       //----------------------------------------------
       // pré processamento - lógica para quebrar o pacote em partes se pacote requiser isso
+      if (type_data == 1){
+        int size_data = strlen(data); // confere o tamanho do pacote
+        data[size_data - 1] = '\0';   // quebra o ultimo valor ( caractere "O")
+
+        for (i = 0; i < size_data; i++){    // laço para preencger extractedStrings com a informação de interesse                
+          extractedStrings[0][i] = data[i]; // atribuição de cada caractere
+        }
+      }
       if (type_data == 2 || type_data == 3){ // se o pacote for do tipo 2 ou 3
         for (i = 0; data[i] != '\0'; i++){
           if (strchr(markers, data[i])) // analisa se o caractere
@@ -300,6 +316,12 @@ void processing(void *pvParameters){
       }
       //------------------------------------------------------
       //atribuição de dado ao pacote Json
+      if (type_data == 1){
+        doc["Bat_Perc"] = atoi(extractedStrings[0]);
+      }
+      if (type_data == 2){
+        doc["time"] = atof(extractedStrings[9] + 1);
+      }
       if (type_data == 2 || type_data == 3){
         doc["latitude"] = atof(latlon[0]);
         doc["longitude"] = atof(latlon[1]);
@@ -310,9 +332,6 @@ void processing(void *pvParameters){
         doc["Y"] = atof(extractedStrings[6] + 1);
         doc["Z"] = atof(extractedStrings[7] + 1);
         doc["Bat_Perc"] = atof(extractedStrings[8] + 1);
-      }
-      if (type_data == 2){
-        doc["time"] = atof(extractedStrings[9] + 1);
       }
       if (type_data == 1 || type_data == 2 || type_data == 3){
         doc["RSSI_LoRa"] = atof(RSSI_LoRA);

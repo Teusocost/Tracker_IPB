@@ -110,7 +110,7 @@ void setup(){
   pinMode(status_sensors, OUTPUT);        // status sensores
   pinMode(status_battery, OUTPUT);        // status bateria
   digitalWrite(status_sensors, HIGH);     // desliga todos os sensores (DHT21, ADXL345)
-
+  digitalWrite(status_sensor_lora, LOW);  // modulo LoRa inicia desligado
   //------------------------------------
   // Verifique o motivo da reinicialização - feito para definir o estado do sistema, ou seja, para encaminhar ou não um pacote HELLO
   reason = esp_reset_reason();
@@ -137,10 +137,10 @@ void setup(){
   }
   //------------------------------------
   // LoRa
-  toggleSerial_lora(true); // comunicacao GPS ligada
-  digitalWrite(status_sensor_lora, HIGH);
-  delay(100); 
   if (reason != ESP_RST_DEEPSLEEP){
+    toggleSerial_lora(true); // comunicacao GPS ligada
+    digitalWrite(status_sensor_lora, HIGH);
+    delay(100); 
     lora.println("AT+ADDRESS?");                    // para conferir o endereco do modulo
     Serial.println(lora.readString());              // para conferir o endereco do modulo
     delay(20);
@@ -149,8 +149,9 @@ void setup(){
     delay(20);
     lora.println("AT+NETWORKID?");                  // para conferir o GRUPO do modulo
     Serial.println(lora.readString());              // para conferir o GRUPO do modulo
+    digitalWrite(status_sensor_lora, LOW);
   }
-  digitalWrite(status_sensor_lora, LOW);
+  else (delay(2000)); //delay para garantir execução do GPS
 } // FIM SETUP
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,6 +179,7 @@ void loop(){
   while(!gpsSerial.available()){ //para conferir a conexão com o GPS
     if(millis()>= now){
       Serial.println("aguardando acionamento do GNSS");
+      gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); // acorda o gps em modo hot
       now = millis()+1000;
     }
     if(millis() >= now_finish+time_to_available_gps){ // se tempo maior que definido
@@ -388,7 +390,7 @@ void send_hello(){                                    // função para mandar um
   digitalWrite(status_battery, HIGH); // liga sistema leitura baterias
   batterystatus(Voltage, Percentage);
   digitalWrite(status_battery, LOW); // desliga sistema leitura baterias
-  sprintf(data, "%d",Percentage);                     // envia pacote com nível a bateria para conferir se gateway esta por perto
+  sprintf(data, "%dO",Percentage);                     // envia pacote com nível a bateria para conferir se gateway esta por perto
   requiredBufferSize = snprintf(NULL, 0, "%s", data); // calcula tamanho string
   sprintf(mensagem, "AT+SEND=%c,%i,%s", end_to_send, requiredBufferSize, data);
   reen_data();                                        // funcao para enviar dados
@@ -428,10 +430,10 @@ void reen_data(){          // funcao para reenviar dados
   delay(10);
   Serial.println("enviando pacote LoRa");
   lora.println(mensagem); // manda a mensagem montada para o módulo
-  led_to_send();
   Serial.println(mensagem);
   Serial.println(lora.readString()); // lê a resposta do módulo
   toggleSerial_lora(false);          // DEsliga Serial
+  led_to_send();
 }
 
 void toggleSerial_lora(bool enable){ // funcao ligar/desligar comunicao com LORA
