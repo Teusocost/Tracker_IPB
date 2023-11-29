@@ -61,8 +61,9 @@ void zerar_extractedStrings(); // para zerar a matriz
 char type_data = 0;            // tipo de dado que está chegando [0] - atual; [1] - dado guardado
 //---------------------------------------------------------
 #include <Arduino.h>
+#include "esp_task_wdt.h"
 // outos pinos do sistema
-#define led_to_rec 12
+#define led_to_rec 25
 // variaveis para função millis (mostrar "." enquanto nao recebe sinal);
 unsigned int break_line = 60000;        // 60 segundos (tempo de reinício de função) (milis)
 unsigned int time_to_show_point = 1000; //"." é mostrado a cada tempo (milis)
@@ -71,7 +72,7 @@ unsigned long time_show_msg;            // variavel de controle
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ja estava aqui
-const uint8_t pin_led = 25;
+const uint8_t pin_led = 12;
 // variaveis que indicam o núcleo
 static uint8_t taskCoreZero = 0;
 static uint8_t taskCoreOne = 1;
@@ -79,6 +80,8 @@ static uint8_t taskCoreOne = 1;
 
 void setup(){
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //Whatdogs
+  esp_task_wdt_init(10, false); // define watchdgs para 10s
   //Lora
   Serial.begin(115200);                           // connect serial
   lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
@@ -207,6 +210,9 @@ void processing(void *pvParameters){
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
   while (true){
+    //----------------------------------------------
+    //reseta whatchdogs para indicar que o sistema está funcionando normalmente
+    esp_task_wdt_reset();
     //----------------------------------------------
     // mostra "." para indicar que está aguardando pacote LORA
     if (millis() - time_break_line >= break_line){

@@ -258,7 +258,7 @@ without_lat_lon: // se não houver lat e long sistema já vem para cá
   }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // BLOCO DE CONFIRMAÇÃO DE ENVIO
-wait_confirmation:
+  wait_confirmation:
 
   Serial.println("==========Aguardar confirmacao========="); // debug serial.print
   
