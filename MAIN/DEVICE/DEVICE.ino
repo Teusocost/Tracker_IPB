@@ -1,5 +1,5 @@
 /* ============================================================================
- *
+ * 
  *   Code to Node
  *   This code went developer to last work in IPB - BRAGANÇA 
  * 
@@ -15,7 +15,7 @@
 #include <Wire.h>                       //SHT21 and Acellerometer I2C
 #include "sht21.h"
 #include "batterystatus.h"
-#include <Adafruit_Sensor.h>            //Acellerometer
+#include <Adafruit_Sensor.h>            // Acellerometer
 #include <Adafruit_ADXL345_U.h>         // Acellerometer
 //==========================================================================
 // Defines
@@ -45,7 +45,7 @@ int sat    = 0,
     minute = 0, 
     second = 0;
 
-unsigned short time_gps_wait = 300 * 1000, // time waiting signal GNSS                 (EDITABLE)
+unsigned short time_gps_wait = 300 * 1000, // time waiting signal GNSS                            (EDITABLE)
                delay_read_gps = 1000,                 // time across two GNSS read
                time_to_available_gps = 3 * 1000;      // time waiting the GNSS response           (EDITABLE)
 unsigned long now = 0;                     // Control time
@@ -58,7 +58,7 @@ TinyGPSPlus gps;
 HardwareSerial lora(1);
 char end_to_send = '2';                  // Address to send package
 unsigned long time_geral = 0;            // Send attempt flag
-int tent = 1;                            // Attempt number (send LoRa package)
+short tent = 1;                            // Attempt number (send LoRa package)
 unsigned int time_to_resend = 10 * 1000; // Time (ms) to resend lora package
 float time_reenv = 0.0;
 bool flag_to_delete_last_data = false;
@@ -94,36 +94,102 @@ int   Percentage = 0.0;
 //---------------------------------------------------------
 //system variables
 esp_reset_reason_t reason;            // Reason that reset microcontroller
-bool cont_to_led;
+bool cont_to_led = 0;
 //==========================================================================
 //Function
-
-void led_to_send();                   // led para indicar envio lora
-void toggleSerial_lora(bool enable);  // funcao para ligar/desligar comunicação Uart
-void toggleSerial_gps(bool enable);   // funcao para ligar/desligar comunicação Uart
-void keep_data();                     // funcao para salvar pacote se necessário
-void configuration_to_confirmation(); // funcao para ajustar bariáveis antes de entrar no laço de confirmação
-//---------------------------------------------------------
+void PINS();
+void GNSS_ON(); 
+void SHT21_ADXL345_ON();
+void Device_switch_turn_on();
+void First_GNSS_test();
+void GET_GNSS_DATA();
+void GET_BATTERY_STATUS();
+void SEND_LORA_CURRENT_PACKAGE();
+void SEND_LORA_MEMORY_PACKAGE();
+void SLEEP_DEVICE_WITHOUT_PACKAGE();
+void print_vallues();
+void send_hello();
+void read_batery_system();
+void gps_standby();
+void gps_standby();
+void configuration_to_confirmation();
+void delete_ultimate_data();
+int quality_signal_lora(int value);
+void led_to_send();                   
+void reen_data();
+void toggleSerial_lora(bool enable);  
+void toggleSerial_gps(bool enable);   
+void keep_data();                     
+void Show_SPIFFS();
+void read_all_data_gps();
+void printallvalues();
+void security_function();
+//==========================================================================
 // SETUP
 void setup(){
-  //------------------------------------
-  // definições placa
+  //--------------------------
+  //System definitions
   Serial.begin(115200); 
-  // define a frequencia da CPU em MHz
   setCpuFrequencyMhz(20);
-  // pinos de leds/transistores/leituras de subsistemas
-  pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); // indicar envio
-  pinMode(status_sensor_lora, OUTPUT);    // status antena lora
-  pinMode(status_sensors, OUTPUT);        // status sensores
-  pinMode(status_battery, OUTPUT);        // status bateria
-  digitalWrite(status_sensors, HIGH);     // desliga todos os sensores (DHT21, ADXL345)
-  digitalWrite(status_sensor_lora, LOW);  // modulo LoRa inicia desligado
+  PINS();
+  reason = esp_reset_reason(); //reason to restart microcontroller
+  //--------------------------
+  // Modules definitions
+  GNSS_ON(); // GPS ON
+  SHT21_ADXL345_ON();
   //------------------------------------
-  // Verifique o motivo da reinicialização - feito para definir o estado do sistema, ou seja, para encaminhar ou não um pacote HELLO
-  reason = esp_reset_reason();
+  if (reason != ESP_RST_DEEPSLEEP) Device_switch_turn_on();
+} 
+
+
+//==========================================================================
+// The device actions
+void loop(){
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); // Wake up
+  Serial.println("=======ESP ACORDADO========="); 
+  Serial.println("Processando/aguardando dados GPS");
   //------------------------------------
-  // gps definições
-  toggleSerial_gps(true); // sistema ja liga gps
+  // collecting all data
+  First_GNSS_test();
+  GET_GNSS_DATA();
+  GET_BATTERY_STATUS();
+  readSHT21Data(temperature, humidity);
+  GET_ACELLEROMETER_DATA();
+  digitalWrite(status_sensors, LOW); // Turn off DHT21 and ADXL345
+  print_vallues();                   
+  //------------------------------------
+  if (lat != 0 && lon != 0) SEND_LORA_CURRENT_PACKAGE();
+  else 
+    lastValue = spiffsUtils.readLastValue("/dados.txt");
+    if (lat == 0 && lon == 0 && lastValue != NULL) SEND_LORA_MEMORY_PACKAGE();
+  else 
+    if (lat == 0 && lon == 0 && lastValue == NULL){
+      SLEEP_DEVICE_WITHOUT_PACKAGE(); 
+      goto finish_process;
+    }
+  //without_lat_lon: // se não houver lat e long sistema já vem para cá
+  //------------------------------------
+  // Confirmation protocol
+  WAIT_GATEWAY_CONFIRMATION();
+  digitalWrite(status_sensor_lora, LOW); //turn off LoRa
+  //------------------------------------
+  // Finish process
+  finish_process:                          
+  Serial.println("=======Fim do processo========="); 
+  esp_deep_sleep_start();
+} // End process
+
+void PINS(){
+  pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); 
+  pinMode(status_sensor_lora, OUTPUT);    
+  pinMode(status_sensors, OUTPUT);        
+  pinMode(status_battery, OUTPUT);        
+  digitalWrite(status_sensors, HIGH);     // (DHT21, ADXL345)
+  digitalWrite(status_sensor_lora, LOW);  
+}
+
+void GNSS_ON(){
+  toggleSerial_gps(true); // GPS ON
   delay(25);
   if (gpsSerial.available()){
     Serial.println("Sensor GPS não encontrado, verifique o esquema eletrico");
@@ -131,88 +197,72 @@ void setup(){
   }
   Serial.println("ligando o gps em modo hot");
   Serial.println("Carregando buffer GNSS");
-  gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); // acorda o gps em modo hot
+  gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); // hot mode
   delay(500); //debug
-  gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); // acorda o gps em modo hot
+  gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); // hot mode
   delay(1000); //debug
-  lat = 0;
-  lon = 0;
-  //------------------------------------
-  // sht21 definições
-  Wire.begin(SDA_PIN, SCL_PIN); // Inicializa a comunicação I2C
-  //------------------------------------
-  // Acelerômetro
+}
+
+void SHT21_ADXL345_ON(){
+  Wire.begin(SDA_PIN, SCL_PIN); // I2C - SHT21
   if (!accel.begin()){
-    Serial.println("No ADXL345 sensor detected.");
-    security_function();
+      Serial.println("No ADXL345 sensor detected.");
+      security_function();
   }
-  //------------------------------------
-  // Se o esp não acordou de um deepsleep
-  cont_to_led = 0;      // para controlar se sistema foi reiniciado manualmente ou n
+}
 
-  if (reason != ESP_RST_DEEPSLEEP){
-    toggleSerial_lora(true); // comunicacao GPS ligada
-    digitalWrite(status_sensor_lora, HIGH);
-    delay(100);
-    lora.println("AT+ADDRESS?");       // para conferir o endereco do modulo lora
-    Serial.println(lora.readString()); // para conferir o endereco do modulo lora
-    delay(20);
-    lora.println("AT+BAND?");          // para conferir a BANDA do modulo  lora
-    Serial.println(lora.readString()); // para conferir o BANDA do modulo  lora
-    delay(20);
-    lora.println("AT+NETWORKID?");     // para conferir o GRUPO do modulo  lora
-    Serial.println(lora.readString()); // para conferir o GRUPO do modulo  lora
-    digitalWrite(status_sensor_lora, LOW);
-    cont_to_led = 1;                        // para controlar se sistema foi reiniciado manualmente ou n
-    digitalWrite(status_sensor_lora, HIGH); // liga LoRa
-    Serial.println("[SISTEMA REINICIADO] -> ENVIAR PACOTE HELLO");
-    send_hello();  // função para mandar um hello e encontrar o gateway;
-    led_to_send(); // pisca led
-    // goto wait_confirmation; // vai para confirmação de recebimento
-    digitalWrite(status_sensor_lora, LOW); // liga LoRa
-    Serial.println("Carregando buffer GNSS");
-    delay(6000); // delay para carregar os buffers do gnss
-  }
-  else {
-  }
-} // FIM SETUP
+void Device_switch_turn_on(){
+  cont_to_led = 1;
+  toggleSerial_lora(true);
+  digitalWrite(status_sensor_lora, HIGH); // LoRa On
+  delay(100);
+  lora.println("AT+ADDRESS?");
+  Serial.println(lora.readString());
+  delay(20);
+  lora.println("AT+BAND?");
+  Serial.println(lora.readString());
+  delay(20);
+  lora.println("AT+NETWORKID?");
+  Serial.println(lora.readString());
+  digitalWrite(status_sensor_lora, HIGH);
+  Serial.println("[SISTEMA REINICIADO] -> ENVIAR PACOTE HELLO");
+  send_hello();
+  led_to_send();
+  digitalWrite(status_sensor_lora, LOW); //  LoRa OFF
+  Serial.println("Carregando buffer GNSS");
+  delay(6000); // buffer gnss
+}
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-// LOOP - AÇÕES PRINCIPAIS DO CÓDIGO
-void loop(){
-  // INICIO
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR); // saí do modo sleep mode quando time * factor
-  Serial.println("=======ESP ACORDADO========="); 
-  //  Iniciar módulo GNSS
-  Serial.println("Processando/aguardando dados GPS");
-  now = millis(); // iniciando função para contagem
+void First_GNSS_test(){
+  now = millis(); 
   now_finish = now;
-  while(!gpsSerial.available()){ //para conferir a conexão com o GPS
+  while(!gpsSerial.available()){ 
     if(millis()>= now){
       Serial.println("aguardando acionamento do GNSS");
-      gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); // acorda o gps em modo hot
+      gpsSerial.print("$PMTK101*32<CR><LF>\r\n"); //  Hot mode
       now = millis()+1000;
     }
-    if(millis() >= now_finish+time_to_available_gps){ // se tempo maior que definido
+    if(millis() >= now_finish+time_to_available_gps){ 
       Serial.println("Algo errado com o GNSS");
       Serial.println("ESP DORIMNDO");
-      security_function(); // função para desligar todos os módulos
-      goto finish_process; // não a nada a ser feito, sistema vai para o fim do processo.
+      security_function();
     }
   }
-  // Capturar dados GNSS
-  now = millis(); // iniciando função para contagem
-  while (millis() < (now + time_gps_wait)){ // Entra no laço se comunicação está ok e numero de requisições ao GPS menor que o estabelecido
-    if (gps.encode(gpsSerial.read())){ // decodifiação de dados recebidos
+}
+
+void GET_GNSS_DATA(){
+  now = millis(); 
+  while (millis() < (now + time_gps_wait)){ 
+    if (gps.encode(gpsSerial.read())){ // Is there data?
       Serial.print("STATUS: ");
       Serial.println(gpsSerial.available()?"TRUE":"FALSE"); 
-      gps.encode(gpsSerial.read()); // interpreta dados brutos
-      read_all_data_gps();          // lê todos os dados
+      gps.encode(gpsSerial.read()); // Read raw data 
+      read_all_data_gps();          
       printallvalues();
       Serial.println("----------------------");
       if (lat != 0 && lon != 0){
         Serial.println("Coordenadas encontradas");
-        break; // loop para aguardar latitude e longitude
+        break; 
       }
       delay(delay_read_gps);
     }
@@ -224,77 +274,65 @@ void loop(){
     //goto without_lat_lon; // programa pula envio ou não de pacote antigos
   }
   gps_standby(); // coloca o gps em standby
-  //------------------------------------
-  // status da bateria (funççao externa)
-  digitalWrite(status_battery, HIGH); // liga sistema leitura baterias
+}
+
+void GET_BATTERY_STATUS(){
+  digitalWrite(status_battery, HIGH); 
   batterystatus(Voltage, Percentage);
-  digitalWrite(status_battery, LOW); // desliga sistema leitura baterias
-  //------------------------------------
-  // leitura de temperatura e humidade SHT21
+  digitalWrite(status_battery, LOW); 
+}
 
-  readSHT21Data(temperature, humidity); // Chama a função para ler os dados do sensor SHT21
+void GET_ACELLEROMETER_DATA(){
   accel.getEvent(&event);
-  //------------------------------------
-  x = event.acceleration.x;          // alecerometro em x
-  y = event.acceleration.y;          // alecerometro em y
-  z = event.acceleration.z;          // alecerometro em z
+  x = event.acceleration.x;          
+  y = event.acceleration.y;          
+  z = event.acceleration.z; 
+}
 
-  digitalWrite(status_sensors, LOW); // desliga todos os sensores (DHT21, L80 ADXL345)
-  print_vallues();                   // mostra todos os dados obtidos acima
-  //-----------------------------------
-  // organizar e enviar LoRa - tentativa atua
-  if (lat != 0 && lon != 0){  // caso o sistema pule a conferencia realizada no gps ele n passa dessa parte
-    Serial.println("=======Enviar informacoes atuais=========");                                                              // debug serial.print
-    digitalWrite(status_sensor_lora, HIGH);                                                                                   // liga LoRa
-    sprintf(data, "A%.6f%.6fB%iC%.2fD%.2fE%.2fF%.2fG%3.2fH%.0dI", lat, lon, vel, temperature, humidity, x, y, z, Percentage); // atribui e organiza as informações em data
+void SEND_LORA_CURRENT_PACKAGE(){
+    Serial.println("=======Enviar informacoes atuais=========");                                                              
+    digitalWrite(status_sensor_lora, HIGH);                                                                                   
+    sprintf(data, "A%.6f%.6fB%iC%.2fD%.2fE%.2fF%.2fG%3.2fH%.0dI", lat, lon, vel, temperature, humidity, x, y, z, Percentage); // package montage
     // o caractere J indica o fim da mensagem
-    requiredBufferSize = snprintf(NULL, 0, "%s", data);                           // calcula tamanho string
-    sprintf(mensagem, "AT+SEND=%c,%i,%s", end_to_send, requiredBufferSize, data); // junta as informações em "mensagem"
-    reen_data();                                                                  // funcao para enviar dados
-  }
-//-----------------------------------
-without_lat_lon: // se não houver lat e long sistema já vem para cá
-
-  lastValue = spiffsUtils.readLastValue("/dados.txt");
-
-  if (lat == 0 && lon == 0 && lastValue != NULL){ // se não houver lat e lon atuais o programa apenas confere se há pacotes antigos para enviar e tenta encontrar conexão com gatway
-    Serial.println("=======[Ex. memoria] -> Procurar GATWAY=========");
-    digitalWrite(status_sensor_lora, HIGH); // liga LoRa
-    send_hello();                           // função para mandar um hello e encontrar o gateway;
-  }
-
-  else if (lat == 0 && lon == 0 && lastValue == NULL){
-    Serial.println("=======[N Ex. memoria - lat e lon N existem]=========");
-    goto finish_process; // não a nada a ser feito, sistema dorme.
-  }
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-// BLOCO DE CONFIRMAÇÃO DE ENVIO
-  wait_confirmation:
-
-  Serial.println("==========Aguardar confirmacao========="); // debug serial.print
+    requiredBufferSize = snprintf(NULL, 0, "%s", data);                           // String size
+    sprintf(mensagem, "AT+SEND=%c,%i,%s", end_to_send, requiredBufferSize, data); // Complete Package
+    reen_data();                                                                  // Send
   
+}
+
+void SEND_LORA_MEMORY_PACKAGE(){
+  Serial.println("=======[Ex. memoria] -> Procurar GATWAY=========");
+  digitalWrite(status_sensor_lora, HIGH); 
+  send_hello();                           
+}
+
+void SLEEP_DEVICE_WITHOUT_PACKAGE(){
+  Serial.println("=======[N Ex. memoria - lat e lon N existem]=========");
+}
+
+void WAIT_GATEWAY_CONFIRMATION(){
+  wait_confirmation:
+  Serial.println("==========Aguardar confirmacao========="); 
   configuration_to_confirmation();
-  while (-1){ // laco para receber confirmação
+
+  while (-1){ 
     //--------------------------------
-    // Confere se confirmação chegou
-    toggleSerial_lora(true); // liga serial
-    // delay(10);
-    incomingString = lora.readString(); // lê a resposta do módulo
-    toggleSerial_lora(false);           // desliga serial
+    toggleSerial_lora(true); 
+    incomingString = lora.readString(); // Read LoRa module response 
+    toggleSerial_lora(false);           
     //------------------------------
-    // reenvia mensagem
-    if (millis() >= time_reenv){ // em n segundos, se não chegou confirmacao
+    if (millis() >= time_reenv){ 
       Serial.printf("Reenviando pacote, tentativa %d\n", tent++);
-      time_reenv = millis() + time_to_resend; // atualizacao de time
-      reen_data();                            // reenvia pacote
+      time_reenv = millis() + time_to_resend; 
+      reen_data();                            // Resend
     }
-    if (millis() >= time_geral+time_to_resend-(tent*1000)){     // fim do laço de tentativas -> subtraçao = impede mais um envio
+    if (millis() >= time_geral+time_to_resend-(tent*1000)){     // End of attempts (subtraction prevents resubmission)
       Serial.println("fim de tentativas");
       if (lat != 0 && lon != 0 && humidity!= 0 && x > -12 && x < 12 && y > -12 && y < 12 && z > -12 && z < 12 && flag_to_delete_last_data== false ){
-        keep_data(); // função para guardar dados em SPIFFS
+        keep_data(); 
         // Show_SPIFFS();
         Serial.println("pacote de dados guardado");
-        break; // fecha laço While
+        break; 
       }
       else if (flag_to_delete_last_data == true){
         Serial.println("pacote de dados retorna para memoria");
@@ -312,32 +350,32 @@ without_lat_lon: // se não houver lat e long sistema já vem para cá
 
     if (incomingString != NULL){ // se chegou algum dado
 
-      Serial.println(incomingString);            // mostra dado
-      char dataArray[50];                        // vetor para trabalhar com informação
-      incomingString.toCharArray(dataArray, 50); // transforma string em char
+      Serial.println(incomingString);            
+      char dataArray[50];                        
+      incomingString.toCharArray(dataArray, 50); // String to char
       // Serial.println(dataArray);
-      conf = strtok(dataArray, ","); // quebra ,
-      conf = strtok(NULL, ",");      // quebra ,
-      conf = strtok(NULL, ",");      // quebra ,
-      Serial.println(conf);          // Mostra a confirmação
-      char msg_to_conf[] = "OK";     // Mensagem esperada
+      conf = strtok(dataArray, ","); // cut ,
+      conf = strtok(NULL, ",");      
+      conf = strtok(NULL, ",");      
+      Serial.println(conf);          
+      char msg_to_conf[] = "OK";     // Expected message
 
-      if (strcmp(conf, "OK") == 0){            // Se a confirmação chegou for a mesma que a esperada
-        Serial.println("confirmação chegou!"); // mostra confirmacao
-        setCpuFrequencyMhz(240);               // acelera a CPU para processamento de memória
-        delay(10);                             // debug
-        delete_ultimate_data();                // funcao para apagr ultima sinal armazenado, se for o caso
-        conf = strtok(NULL, ",");              // quebra para conferir qualidade de sinal
-        if (quality_signal_lora(atof(conf))){  // se a qualidade do sinal estiver boa
-          lastValue = spiffsUtils.readLastValue("/dados.txt"); // devolve o ultimo valor gravado
-          setCpuFrequencyMhz(20);              // desacelera a CPU
-          delay(10);                           // debug
+      if (strcmp(conf, "OK") == 0){            
+        Serial.println("confirmação chegou!"); 
+        setCpuFrequencyMhz(240);               // Overclock
+        delay(10);                             
+        delete_ultimate_data();                
+        conf = strtok(NULL, ",");              // cut ,
+        if (quality_signal_lora(atof(conf))){  // check signal
+          lastValue = spiffsUtils.readLastValue("/dados.txt"); 
+          setCpuFrequencyMhz(20);              // Overclock
+          delay(10);                           
           Serial.println("sinal ta bom");
           if (lastValue == NULL){
             Serial.println("não há nada para enviar");
           }
           else{
-            Serial.println("=======Enviar dados guardados========="); // debug serial.print
+            Serial.println("=======Enviar dados guardados========="); 
             Serial.println("Último valor gravado:");
             Serial.println(lastValue);                                                              // imprime o ultimo valor gravado
             delay(1000);                                                                            // delay para debug no gatway
@@ -362,17 +400,7 @@ without_lat_lon: // se não houver lat e long sistema já vem para cá
       }
     } // fecha tratamento de mensagem recebida
   }   // fecha bloco de confirmação
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  // PROCESSOS FINAIS
-  finish_process:                           // sistema pula para ca se não apresentar coordenadas
-  digitalWrite(status_sensor_lora, LOW); // desliga LoRa
-  // força o ESP32 entrar em modo SLEEP
-  Serial.println(("Sistema entrando em Deep Sleep"));
-  Serial.println("Desligando todos os sensores");
-  Serial.println("=======Fim do processo========="); // debug serial.print
-  esp_deep_sleep_start();
-} // fim loop
+}
 
 void print_vallues(){
   Serial.print("Voltagem: ");
@@ -391,15 +419,15 @@ void print_vallues(){
   Serial.println(humidity);
 }
 
-void send_hello(){                                    // função para mandar um hello e econtrar o gatway
-  read_batetery_system();
+void send_hello(){                                    
+  read_batery_system();
   sprintf(data, "%dO",Percentage);                     // envia pacote com nível a bateria para conferir se gateway esta por perto
   requiredBufferSize = snprintf(NULL, 0, "%s", data); // calcula tamanho string
   sprintf(mensagem, "AT+SEND=%c,%i,%s", end_to_send, requiredBufferSize, data);
   reen_data();                                        // funcao para enviar dados
 }
 
-void read_batetery_system(){
+void read_batery_system(){
   digitalWrite(status_battery, HIGH); // liga sistema leitura baterias
   delay(1); //debug do transsitor
   batterystatus(Voltage, Percentage);
@@ -435,7 +463,7 @@ void led_to_send(){
   digitalWrite(LED_BUILTIN_MQTT_SEND, LOW);  // Desliga led
 }
 
-void reen_data(){          // funcao para reenviar dados
+void reen_data(){          
   toggleSerial_lora(true); // Liga serial
   delay(10);
   Serial.println("enviando pacote LoRa");
@@ -446,7 +474,7 @@ void reen_data(){          // funcao para reenviar dados
   led_to_send();
 }
 
-void toggleSerial_lora(bool enable){ // funcao ligar/desligar comunicao com LORA
+void toggleSerial_lora(bool enable){ 
   if (enable){
     lora.begin(115200, SERIAL_8N1, rxLORA, txLORA);
   }
@@ -455,7 +483,7 @@ void toggleSerial_lora(bool enable){ // funcao ligar/desligar comunicao com LORA
   }
 }
 
-void toggleSerial_gps(bool enable){ // funcao ligar/desligar comunicao com LORA
+void toggleSerial_gps(bool enable){ 
   if (enable){
     gpsSerial.begin(9600, SERIAL_8N1, rxGPS, txGPS); // connect gps sensor
   }
@@ -519,13 +547,12 @@ void printallvalues(){
   }
 }
 
-void security_function() { // função de seguranca caso algum módulo não for encontrado no sistema
+void security_function() { 
   Serial.println("Sistema com mal funcionamento");
   Serial.println("Desligando/adormecendo todos os módulos");
   digitalWrite(status_sensors, LOW);
   digitalWrite(status_battery, LOW);
   digitalWrite(status_sensor_lora, LOW);
   gps_standby();
+  esp_deep_sleep_start();
 }
-
-
