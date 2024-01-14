@@ -3,7 +3,7 @@
 #include <Adafruit_ADXL345_U.h>
 
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
-
+float x,y,z;
 void setup(void) 
 {
    Serial.begin(115200);  
@@ -17,11 +17,15 @@ void loop(void)
 {
    sensors_event_t event;
    accel.getEvent(&event);
-   float teste = event.acceleration.x;
+   x = event.acceleration.x;
+   y = event.acceleration.y;
+   z = event.acceleration.z;
    
-   Serial.print("X: "); Serial.print(teste,2); Serial.print("  ");
-   Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("  ");
-   Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");
-   Serial.println("m/s^2 ");
+  Serial.print(x);
+  Serial.print(" ");
+  Serial.print(y);
+  Serial.print(" ");
+  Serial.println(z);
+
    delay(100);
 }

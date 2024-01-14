@@ -39,7 +39,7 @@ void loop()
  
       Serial.print("Date: ");
       Serial.print(gps.date.day()); Serial.print("/");
-      Serial.print(gps.date.month()); Serial.print("/");
+      Serial.printf("%02i",gps.date.month()); Serial.print("/");
       Serial.println(gps.date.year());
 
       Serial.print("Hour: ");

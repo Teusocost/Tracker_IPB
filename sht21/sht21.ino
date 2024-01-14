@@ -5,6 +5,9 @@
 #define SCL_PIN 22 // Pino SCL (conexão com o SHT21)
 
 void setup() {
+  pinMode(2,OUTPUT);
+  pinMode(18,OUTPUT);
+  digitalWrite(18,HIGH);
   Serial.begin(115200);
 
   Wire.begin(SDA_PIN, SCL_PIN);  // Inicializa a comunicação I2C
@@ -23,6 +26,6 @@ void loop() {
   Serial.print("Humidity: ");
   Serial.print(humidity, 2);
   Serial.println(" %");
-
-  delay(2000);
+  digitalWrite(2,!digitalRead(2));
+  delay(1000);
 }

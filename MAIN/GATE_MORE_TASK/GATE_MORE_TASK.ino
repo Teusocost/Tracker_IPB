@@ -1,23 +1,14 @@
-/* ============================================================================
- *
- *   Code to Gateway
- *   This code went developer to last work in IPB - BRAGANÇA 
- * 
- *   Autor: Eng. Mateus Costa de Araujo 
- *   Data:  Fevereiro, 2024
- *
-============================================================================ */
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // biblitoecas e variáveis para WIfi/MQTT
 // #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include <WiFiManager.h> 
-#include "esp_task_wdt.h"
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager -> para adicionar colocar login e senha
+
 //-------------------------------------------
 // Configurações da rede Wi-Fi (não necessário depois da library Wifimeneger)
- const char *ssid = "NOS-2E40";
- const char *password = "2TJA5RZ9";
+// const char *ssid = "NOS-2E40";
+// const char *password = "2TJA5RZ9";
 
 // const char* ssid = "iPhone de Mateus";
 // const char* password = "12345678";
@@ -55,7 +46,7 @@ DynamicJsonDocument gat(64);  // Buffer Json para encaminhar status gateway
 HardwareSerial lora(1); // objeto Lora
 String incomingString;  // string que vai receber as informações
 
-char end_to_send = '1'; // endereço do outro lora
+char end_to_send = false; // endereço dele
 
 char markers[12]; // = "ABCDEFGHIJK";  // J indica o fim da string
 // char makers_with_T[] = "ABCDEFGHIJK"; //K indica o fim da string
@@ -92,7 +83,6 @@ void setup(){
   //Whatdogs
   //esp_task_wdt_init(10, false); // define watchdgs para 10s
   //Lora
-  /////////////////////////q
   Serial.begin(115200);                           // connect serial
   lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
   lora.println("AT+ADDRESS?");                    // para conferir o endereco do modulo
@@ -116,7 +106,7 @@ void setup(){
   bool res;
   // res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
   wm.setConfigPortalTimeout(30); // auto close configportal after n seconds
-  res = wm.autoConnect("ESP32","123456789"); // com senha para acessar o ESP
+  res = wm.autoConnect("Gatway_ESP32","123456789"); // com senha para acessar o ESP
   if (!res){
     Serial.println("Failed to connect");
     // ESP.restart();
@@ -155,7 +145,7 @@ void setup(){
     xTaskCreatePinnedToCore(
         debug_led,     /* função que implementa a tarefa */
         "coreTaskTwo", /* nome da tarefa */
-        2000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
+        5000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
         NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
         1,             /* prioridade da tarefa (0 a N) */
         NULL,          /* referência para a tarefa (pode ser NULL) */
@@ -178,7 +168,6 @@ void loop(){} //não executa nada
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tarefa 1 
 void publishMQTTtest (void *pcParameters){
-  esp_task_wdt_deinit(); //desliga WTG
   while(true){
       if (!client.connected()){
         reconnect();
@@ -194,13 +183,11 @@ void publishMQTTtest (void *pcParameters){
       Serial.print("\nSTATUS GATWAY ENVIADO - RSSI WIFI: "); // mostra msg de envio
       Serial.println(rssi);                                  // valor do rssi
       vTaskDelay(time_to_resend_msg_status_gatway);          // taks dorme por tempo definido
-      esp_task_wdt_init(10, false) ? Serial.println("ERRO 1"): 0;     //return status Whatdogs
   }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tarefa 2
 void debug_led (void *pvParameters){
-  esp_task_wdt_deinit(); //desliga WTG
 
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
@@ -216,14 +203,12 @@ void debug_led (void *pvParameters){
       digitalWrite(pin_led, LOW);
     }
     vTaskDelay(1000);
-    esp_task_wdt_init(10, false) ?Serial.println("ERRO 2"):0;     //return status Whatdogs
   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tarefa 3
 void processing(void *pvParameters){
-  esp_task_wdt_deinit(); //desliga WTG
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
   while (true){
@@ -343,7 +328,7 @@ void processing(void *pvParameters){
         doc["Bat_Perc"] = atoi(extractedStrings[0]);
       }
       if (type_data == 2){
-        doc["time"] = (extractedStrings[9] + 1);
+        doc["time"] = atoi(extractedStrings[9] + 1);
       }
       if (type_data == 2 || type_data == 3){
         doc["latitude"] = atof(latlon[0]);
@@ -402,7 +387,6 @@ void processing(void *pvParameters){
       }
       //-------------------------------------------
     }
-    esp_task_wdt_init(10, false) ?Serial.println("ERRO 3"): 0;     //return status Whatdogs
   }
 }
 
@@ -475,13 +459,13 @@ void reconnect(){
 
     //if (client.connect("ESP32Client")){
     if (client.connect("ESP32Client", mqttUser, mqttPassword)){
-      Serial.println("Conectado");
+      Serial.println("\nConectado");
     }
     else{
       Serial.print("Falha na conexão - Estado: ");
       Serial.print(client.state());
       Serial.println(" Tentando novamente em 2 segundos");
-      vTaskDelay(2000);
+      delay(2000);
       cont_to_reset++;
     }
     if (cont_to_reset >= 2){
@@ -489,6 +473,5 @@ void reconnect(){
       Serial.println("=======================================");
       ESP.restart();
     }
-    vTaskDelay(1);
   }
 }

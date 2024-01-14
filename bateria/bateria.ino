@@ -15,6 +15,10 @@ int analogInPin  = 33;    // Analog input pin
 int sensorValue; 
 float calibration = 0.36; // Check Battery voltage using multimeter & add/subtract the value
 void setup() {
+  pinMode(4,OUTPUT); //pin transsitor
+  digitalWrite(4,HIGH);
+  pinMode(2,OUTPUT); //pin led indication
+
   // Initialize serial and wait for port to open:
   Serial.begin(115200);
   // This delay gives the chance to wait for a Serial Monitor without blocking if none is found
@@ -41,6 +45,7 @@ void loop() {
   Serial.print(voltage);
   Serial.print("\t Battery Percentage = ");
   Serial.println(bat_percentage);
+  digitalWrite(2,!digitalRead(2));
   delay(1000);
   
 }
