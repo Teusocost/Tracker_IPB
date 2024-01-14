@@ -291,12 +291,11 @@ void GET_ACELLEROMETER_DATA(){
 void SEND_LORA_CURRENT_PACKAGE(){
     Serial.println("=======Enviar informacoes atuais=========");                                                              
     digitalWrite(status_sensor_lora, HIGH);                                                                                   
-    sprintf(data, "A%.6f%.6fB%iC%.2fD%.2fE%.2fF%.2fG%3.2fH%.0dI", lat, lon, vel, temperature, humidity, x, y, z, Percentage); // package montage
+    sprintf(data, "A%.6f%.6fB%iC%.0fD%.0fE%.2fF%.2fG%.2fH%.0dI", lat, lon, vel, temperature, humidity, x, y, z, Percentage); // package montage
     // o caractere J indica o fim da mensagem
     requiredBufferSize = snprintf(NULL, 0, "%s", data);                           // String size
     sprintf(mensagem, "AT+SEND=%c,%i,%s", end_to_send, requiredBufferSize, data); // Complete Package
     reen_data();                                                                  // Send
-  
 }
 
 void SEND_LORA_MEMORY_PACKAGE(){
