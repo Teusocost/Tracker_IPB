@@ -45,7 +45,7 @@ int sat    = 0,
     minute = 0, 
     second = 0;
 
-unsigned short time_gps_wait = 300 * 1000, // time waiting signal GNSS                            (EDITABLE)
+unsigned short time_gps_wait = 300 * 1000,            // time waiting signal GNSS                 (EDITABLE)
                delay_read_gps = 1000,                 // time across two GNSS read
                time_to_available_gps = 3 * 1000;      // time waiting the GNSS response           (EDITABLE)
 unsigned long now = 0;                     // Control time
@@ -58,7 +58,7 @@ TinyGPSPlus gps;
 HardwareSerial lora(1);
 char end_to_send = '2';                  // Address to send package
 unsigned long time_geral = 0;            // Send attempt flag
-short tent = 1;                            // Attempt number (send LoRa package)
+unsigned short tent = 1;                            // Attempt number (send LoRa package)
 unsigned int time_to_resend = 10 * 1000; // Time (ms) to resend lora package
 float time_reenv = 0.0;
 bool flag_to_delete_last_data = false;
@@ -140,8 +140,6 @@ void setup(){
   //------------------------------------
   if (reason != ESP_RST_DEEPSLEEP) Device_switch_turn_on();
 } 
-
-
 //==========================================================================
 // The device actions
 void loop(){
@@ -178,7 +176,8 @@ void loop(){
   Serial.println("=======Fim do processo========="); 
   esp_deep_sleep_start();
 } // End process
-
+//==========================================================================
+// FUNCTIONS
 void PINS(){
   pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); 
   pinMode(status_sensor_lora, OUTPUT);    
