@@ -3,7 +3,7 @@
  *   Code to Node
  *   This code went developer to last work in IPB - BRAGANÇA 
  * 
- *   Autor: Eng. Mateus Costa de Araujo 
+ *   Autor: Mateus Costa de Araujo 
  *   Data:  Fevereiro, 2024
  *
  *   OBS: Write this code in 20mhz in arduino framework
@@ -12,11 +12,11 @@
 #include <TinyGPS++.h>                  // GNSS - UART
 #include <HardwareSerial.h>
 #include "SPIFFS_Utils.h"
-#include <Wire.h>                       //SHT21 and Acellerometer I2C
+#include <Wire.h>                       //SHT21 and accelerometer I2C
 #include "sht21.h"
 #include "batterystatus.h"
-#include <Adafruit_Sensor.h>            // Acellerometer
-#include <Adafruit_ADXL345_U.h>         // Acellerometer
+#include <Adafruit_Sensor.h>            // accelerometer
+#include <Adafruit_ADXL345_U.h>         // accelerometer
 //==========================================================================
 // Defines
 #define rxGPS 16
@@ -81,7 +81,7 @@ SPIFFS_Utils spiffsUtils;
 float temperature = 0.0, 
       humidity = 0.0;
 //---------------------------------------------------------
-// Acellerometer variables
+// accelerometer variables
 sensors_event_t event;
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
 float x = 0.0, 
@@ -104,6 +104,7 @@ void Device_switch_turn_on();
 void First_GNSS_test();
 void GET_GNSS_DATA();
 void GET_BATTERY_STATUS();
+void GET_ACCELEROMETER_DATA()
 void SEND_LORA_CURRENT_PACKAGE();
 void SEND_LORA_MEMORY_PACKAGE();
 void SLEEP_DEVICE_WITHOUT_PACKAGE();
@@ -152,7 +153,7 @@ void loop(){
   GET_GNSS_DATA();
   GET_BATTERY_STATUS();
   readSHT21Data(temperature, humidity);
-  GET_ACELLEROMETER_DATA();
+  GET_ACCELEROMETER_DATA();
   digitalWrite(status_sensors, LOW); // Turn off DHT21 and ADXL345
   print_vallues();                   
   //------------------------------------
@@ -281,7 +282,7 @@ void GET_BATTERY_STATUS(){
   digitalWrite(status_battery, LOW); 
 }
 
-void GET_ACELLEROMETER_DATA(){
+void GET_ACCELEROMETER_DATA(){
   accel.getEvent(&event);
   x = event.acceleration.x;          
   y = event.acceleration.y;          

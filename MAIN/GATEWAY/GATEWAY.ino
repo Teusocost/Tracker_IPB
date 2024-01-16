@@ -3,92 +3,81 @@
  *   Code to Gateway
  *   This code went developer to last work in IPB - BRAGANÇA 
  * 
- *   Autor: Eng. Mateus Costa de Araujo 
+ *   Autor: Mateus Costa de Araujo 
  *   Data:  Fevereiro, 2024
  *
 ============================================================================ */
-
 // biblitoecas e variáveis para WIfi/MQTT
 // #include <WiFi.h>
+#include <Arduino.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <WiFiManager.h> 
 #include "esp_task_wdt.h"
-//-------------------------------------------
-// Configurações da rede Wi-Fi (não necessário depois da library Wifimeneger)
- const char *ssid = "NOS-2E40";
- const char *password = "2TJA5RZ9";
-
-// const char* ssid = "iPhone de Mateus";
-// const char* password = "12345678";
-
-// const char* ssid = "agents";
-// const char* password = "QgC9O8VucAByqvVu5Rruv1zdpqM66cd23KG4ElV7vZiJND580bzYvaHqz5k07G2";
-//-------------------------------------------
-
-WiFiClient espClient;
-int32_t rssi; // variavel para recever sinal RSSI wifi
-// Configurações do broker MQTT
-const char *mqttServer = "broker.mqtt-dashboard.com";
-bool flag_mqtt = false; // flag para garantir envio do pacote.
-const int mqttPort = 1883;
-const char *mqttUser = "IPB";               // usuário topico
-const char *mqttPassword = "noiottracker";  // senha topico
-const char *topic = "IPB/TESTE/TRACKER/01"; // topico para enviar os pacotes
-const char *topic2 = "IPB/TESTE/GATWAY/01"; // topico para enviar status gatway
-char flat_network = false;                  // Flat devolvida pelo node-red
-PubSubClient client(espClient);
-int time_to_resend_msg_status_gatway = 30000; // tempo em que o esp reenvia ao BD seu status
-char *RSSI_LoRA;
-
-String jsonData = "";         // para receber json (pacote)
-String jsonStatus = "";       // para receber json (status gatway)
-DynamicJsonDocument doc(256); // Tamanho do buffer JSON
-DynamicJsonDocument gat(64);  // Buffer Json para encaminhar status gateway
-//---------------------------------------------------------
-// Lora - Uart
-#include <HardwareSerial.h>
-
+#include <HardwareSerial.h>  // LoRa
+//==========================================================================
+// Defines
 #define rxLoRa 16
 #define txLoRA 17
-
-HardwareSerial lora(1); // objeto Lora
-String incomingString;  // string que vai receber as informações
-
-char end_to_send = '1'; // endereço do outro lora
-
-char markers[12]; // = "ABCDEFGHIJK";  // J indica o fim da string
-// char makers_with_T[] = "ABCDEFGHIJK"; //K indica o fim da string
-
-char *data;                    // para armazenar as informações que chegam
-char extractedStrings[12][20]; // 9 caracteres de A a I e tamanho suficiente para armazenar os valores
-char utctime[25];              // vetor que vai receber time
-char latlon[2][10];            // veotor para receber latitude e longitude
-char last_data[] = "K";        // Caracter para conferir se o pacote é da memoria (UTC Time Format has a Z)
-char find_gatway[] = "O";      // mensagem que device envia para encontrar gatway
-void zerar_extractedStrings(); // para zerar a matriz
-char type_data = 0;            // tipo de dado que está chegando [0] - atual; [1] - dado guardado
-//---------------------------------------------------------
-#include <Arduino.h>
-//#include "esp_task_wdt.h"
-// outos pinos do sistema
 #define led_to_rec 25
-// variaveis para função millis (mostrar "." enquanto nao recebe sinal);
-unsigned int break_line = 60000;        // 60 segundos (tempo de reinício de função) (milis)
-unsigned int time_to_show_point = 1000; //"." é mostrado a cada tempo (milis)
-unsigned long time_break_line;          // variavel de controle
-unsigned long time_show_msg;            // variavel de controle
+#define pin_led 12
+//---------------------------------------------------------
+// Wifi and MQTT
+WiFiClient espClient;
+int32_t rssi; // RSSI wifi
+const char *mqttServer = "broker.mqtt-dashboard.com";
+bool flag_mqtt = false; // confirmation flag package.
+const short mqttPort = 1883;
+const char *mqttUser = "IPB";
+const char *mqttPassword = "noiottracker";
+const char *topic = "IPB/TESTE/TRACKER/01";
+const char *topic2 = "IPB/TESTE/GATWAY/01";
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// ja estava aqui
-const uint8_t pin_led = 12;
-// variaveis que indicam o núcleo
+PubSubClient client(espClient);
+short time_to_resend_msg_status_gatway = 30000; // Time to resend gateway status (ms) (EDITABLE)
+char *RSSI_LoRA = 0;
+
+String jsonData = "";
+String jsonStatus = "";       // (gateway status)
+DynamicJsonDocument doc(256); // Package buffer
+DynamicJsonDocument gat(64);  // gatway vuffer status
+//---------------------------------------------------------
+// Lora - Uart
+HardwareSerial lora(1);
+String incomingString;
+char end_to_send = '1'; // Device Address
+char markers[12]; // = "ABCDEFGHIJK";  // J -> end to string
+char *data;                    // raw data
+char extractedStrings[12][20]; // Vector to package
+char utctime[25];              // vetor que vai receber time          ******
+char latlon[2][10];
+char last_data[] = "K";        // Character which packet is memory 
+char find_gatway[] = "O";      // Character that indicates that the device is looking for the gateway
+char type_data = 0;            //  [0] - current; [1] - memory
+//---------------------------------------------------------
+// FLOW
+unsigned short break_line = 60000;        
+unsigned short time_to_show_point = 1000; 
+unsigned long time_break_line;          
+unsigned long time_show_msg;            
+//bool serialEnabled = true; // Variável de controle para a comunicação serial
+//---------------------------------------------------------
+// FREERTOS
 static uint8_t taskCoreZero = 0;
 static uint8_t taskCoreOne = 1;
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//==========================================================================
+// Functions
+void zerar_extractedStrings(); 
+void publishMQTTtest (void *pcParameters);
+void debug_led (void *pvParameters);
+void processing(void *pvParameters);
+void separate_lat_and_lon();
+void led_to_send();
+void zerar_extractedStrings();
+void toggleSerial(bool enable);
+void reconnect();
+//==========================================================================
 void setup(){
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //Whatdogs
   //esp_task_wdt_init(10, false); // define watchdgs para 10s
   //Lora
@@ -175,8 +164,7 @@ void setup(){
 } // fim setup()
 
 void loop(){} //não executa nada
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tarefa 1 
+
 void publishMQTTtest (void *pcParameters){
   esp_task_wdt_deinit(); //desliga WTG
   while(true){
@@ -197,8 +185,7 @@ void publishMQTTtest (void *pcParameters){
       esp_task_wdt_init(10, false) ? Serial.println("ERRO 1"): 0;     //return status Whatdogs
   }
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tarefa 2
+
 void debug_led (void *pvParameters){
   esp_task_wdt_deinit(); //desliga WTG
 
@@ -220,8 +207,6 @@ void debug_led (void *pvParameters){
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tarefa 3
 void processing(void *pvParameters){
   esp_task_wdt_deinit(); //desliga WTG
   String taskMessage = "Task running on core ";
@@ -455,8 +440,6 @@ void zerar_extractedStrings(){ // função para zerar string que armazena os dad
   rssi = 0;
   doc.clear(); // Isso apagará todo o conteúdo do documento
 }
-
-bool serialEnabled = true; // Variável de controle para a comunicação serial
 
 void toggleSerial(bool enable){
   if (enable){
