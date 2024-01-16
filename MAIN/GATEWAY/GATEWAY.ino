@@ -19,7 +19,7 @@
 // Defines
 #define rxLoRa 16
 #define txLoRA 17
-#define led_to_rec 25
+#define led_to_receive 25
 #define pin_led 12
 //---------------------------------------------------------
 // Wifi and MQTT
@@ -67,8 +67,12 @@ static uint8_t taskCoreZero = 0;
 static uint8_t taskCoreOne = 1;
 //==========================================================================
 // Functions
+void PINS_AND_SYSTEM();
+void LORA_SETTINGS();
+void WIFI_SETTINGS();
+void TASKS();
 void zerar_extractedStrings(); 
-void publishMQTTtest (void *pcParameters);
+void publishMQTTstatus (void *pcParameters);
 void debug_led (void *pvParameters);
 void processing(void *pvParameters);
 void separate_lat_and_lon();
@@ -78,63 +82,23 @@ void toggleSerial(bool enable);
 void reconnect();
 //==========================================================================
 void setup(){
-  //------------------------------------
-  //Pins and system
-  pinMode(pin_led, OUTPUT);
-  digitalWrite(pin_led, HIGH);
-  Serial.begin(115200);                           
-  //------------------------------------
-  //LoRa
-  lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); 
-  lora.println("AT+ADDRESS?");                    
-  Serial.println(lora.readString());              
-  delay(20);
-  lora.println("AT+BAND?");                    
-  Serial.println(lora.readString());              
-  delay(20);
-  lora.println("AT+NETWORKID?");                    
-  Serial.println(lora.readString());              
-  //------------------------------------
-  // Wifi 
-  WiFi.mode(WIFI_STA);
-  WiFiManager wm; // objeto do tipo wifimeneger
-  // Gatway.resetSettings();
-  bool res;
-  // res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
-  wm.setConfigPortalTimeout(40); // auto close configportal after n seconds
-  res = wm.autoConnect("ESP32","123456789"); // com senha para acessar o ESP
-  if (!res){
-    Serial.println("Failed to connect");
-    // ESP.restart();
-  }
-  else{
-    // if you get here you have connected to the WiFi
-    Serial.println("connected...yeey :)");
-    //Serial.println(WiFi.localIP());  // Mostrar o IP (wifi manager ja faz isso)
-  }
-  //------------------------------------
-  // MQTT
-  client.setServer(mqttServer, mqttPort); // define servidor e porta
-  //client.setCallback(callback);           // define callback para receber msg de confirmação
-  //------------------------------------
-  // outros pinos
-  pinMode(led_to_rec, OUTPUT);
-  digitalWrite(led_to_rec, LOW); // Desliga led
-  //------------------------------------
-  // millis para processos em loop
-  
-  time_break_line = millis();
-  time_show_msg = millis();
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Definicao das tarefas
-    xTaskCreatePinnedToCore(
-        publishMQTTtest,   /* função que implementa a tarefa */
-        "coreTaskOne", /* nome da tarefa */
-        5000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
-        NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
-        2,             /* prioridade da tarefa (0 a N) */
-        NULL,          /* referência para a tarefa (pode ser NULL) */
-        taskCoreZero);  /* Núcleo que executará a tarefa */
+  PINS_AND_SYSTEM();                         
+  LORA_SETTINGS();
+  WIFI_SETTINGS();      
+  TASKS();
+} 
+//==========================================================================
+void loop(){} 
+
+void TASKS(){
+  xTaskCreatePinnedToCore(
+        publishMQTTstatus,   /* função que implementa a tarefa */
+        "coreTaskOne", /* task name */
+        5000,          /* words */
+        NULL,          /* entrance parameter */
+        2,             /* Priority */
+        NULL,          /* Reference */
+        taskCoreZero);  /* Core */
 
     delay(500); // tempo para a tarefa iniciar
   //------------------------------------
@@ -156,14 +120,10 @@ void setup(){
         3,             
         NULL,          
         taskCoreOne); 
-    delay(500);        
-  //------------------------------------
-} // fim setup()
+    delay(500);   
+}
 
-void loop(){} 
-
-void publishMQTTtest (void *pcParameters){
-  esp_task_wdt_deinit(); //desliga WTG
+void publishMQTTstatus (void *pcParameters){
   while(true){
       if (!client.connected()){
         reconnect();
@@ -179,12 +139,10 @@ void publishMQTTtest (void *pcParameters){
       Serial.print("\nSTATUS GATWAY ENVIADO - RSSI WIFI: "); // mostra msg de envio
       Serial.println(rssi);                                  // valor do rssi
       vTaskDelay(time_to_resend_msg_status_gatway);          // taks dorme por tempo definido
-      esp_task_wdt_init(10, false) ? Serial.println("ERRO 1"): 0;     //return status Whatdogs
   }
 }
 
 void debug_led (void *pvParameters){
-  esp_task_wdt_deinit(); //desliga WTG
 
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
@@ -200,12 +158,10 @@ void debug_led (void *pvParameters){
       digitalWrite(pin_led, LOW);
     }
     vTaskDelay(1000);
-    esp_task_wdt_init(10, false) ?Serial.println("ERRO 2"):0;     //return status Whatdogs
   }
 }
 
 void processing(void *pvParameters){
-  esp_task_wdt_deinit(); //desliga WTG
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
   while (true){
@@ -216,7 +172,7 @@ void processing(void *pvParameters){
     // mostra "." para indicar que está aguardando pacote LORA
     if (millis() - time_break_line >= break_line){
       // Reinicie o contador millis()
-      Serial.print("\n"); // quera linha
+      Serial.print("\n"); 
       time_break_line = millis();
     }
     if (millis() - time_show_msg >= time_to_show_point){
@@ -384,8 +340,53 @@ void processing(void *pvParameters){
       }
       //-------------------------------------------
     }
-    esp_task_wdt_init(10, false) ?Serial.println("ERRO 3"): 0;     //return status Whatdogs
   }
+}
+
+void PINS_AND_SYSTEM(){
+  Serial.begin(115200);  
+  time_break_line = millis();
+  time_show_msg = millis();
+
+  pinMode(led_to_receive, OUTPUT);
+  digitalWrite(led_to_receive, LOW); 
+  pinMode(pin_led, OUTPUT);
+  digitalWrite(pin_led, HIGH);
+}
+
+void LORA_SETTINGS(){
+  lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); 
+  lora.println("AT+ADDRESS?");                    
+  Serial.println(lora.readString());              
+  delay(20);
+  lora.println("AT+BAND?");                    
+  Serial.println(lora.readString());              
+  delay(20);
+  lora.println("AT+NETWORKID?");                    
+  Serial.println(lora.readString());  
+}
+
+void WIFI_SETTINGS(){
+  WiFi.mode(WIFI_STA);
+  WiFiManager wm; 
+  // Gatway.resetSettings();
+  bool res;
+  // res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
+  wm.setConfigPortalTimeout(40); // auto close config portal after n seconds
+  res = wm.autoConnect("ESP32","123456789"); // 
+  if (!res){
+    Serial.println("Failed to connect");
+    // ESP.restart();
+  }
+  else{
+    // if you get here you have connected to the WiFi
+    Serial.println("connected...yeey :)");
+    //Serial.println(WiFi.localIP());  // Mostrar o IP (wifi manager ja faz isso)
+  }
+  //------------------------------------
+  // MQTT
+  client.setServer(mqttServer, mqttPort); // define servidor e porta
+  //client.setCallback(callback);         // define callback para receber msg de confirmação
 }
 
 void separate_lat_and_lon(){
@@ -409,9 +410,9 @@ void send_confirmation(){
 }
 
 void led_to_send(){
-  digitalWrite(led_to_rec, HIGH); // Liga Led
+  digitalWrite(led_to_receive, HIGH); // Liga Led
   delay(100);                     // tempo de led ligado
-  digitalWrite(led_to_rec, LOW);  // Desliga led
+  digitalWrite(led_to_receive, LOW);  // Desliga led
 }
 
 void zerar_extractedStrings(){ 
