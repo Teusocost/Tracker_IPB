@@ -2,9 +2,9 @@
 
 var type = null;
 
-var X = -1.06, 
-    Y = -9.85,
-    Z = -1.1;
+var X = 5.33, 
+    Y = -1.88,
+    Z = 7.18;
 
 //analise:
 //top

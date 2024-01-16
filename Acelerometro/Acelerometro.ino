@@ -39,10 +39,12 @@ void loop(void)
 int select_type(int X,int Y,int Z){
   int type = 0;
   //top
+//top
 if (X >= -3 && X < 3 &&
     Y >= -2.5 && Y < 4.5 &&
     Z >= 7 && Z < 11
 ) type = 1;
+//front
 else
     if (X >= 4 && X < 12 &&
         Y >= -2 && Y < 6 &&

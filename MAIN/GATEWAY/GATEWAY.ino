@@ -7,7 +7,7 @@
  *   Data:  Fevereiro, 2024
  *
 ============================================================================ */
-// biblitoecas e variáveis para WIfi/MQTT
+// Lybrares
 // #include <WiFi.h>
 #include <Arduino.h>
 #include <PubSubClient.h>
@@ -78,33 +78,30 @@ void toggleSerial(bool enable);
 void reconnect();
 //==========================================================================
 void setup(){
-  //Whatdogs
-  //esp_task_wdt_init(10, false); // define watchdgs para 10s
-  //Lora
-  /////////////////////////q
-  Serial.begin(115200);                           // connect serial
-  lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); // connect lora  modulo
-  lora.println("AT+ADDRESS?");                    // para conferir o endereco do modulo
-  Serial.println(lora.readString());              // para conferir o endereco do modulo
-  delay(20);
-  lora.println("AT+BAND?");                    // para conferir a BANDA do modulo
-  Serial.println(lora.readString());              // para conferir o BANDA do modulo
-  delay(20);
-  lora.println("AT+NETWORKID?");                    // para conferir o GRUPO do modulo
-  Serial.println(lora.readString());              // para conferir o GRUPO do modulo
   //------------------------------------
-  //Pins indicadores
+  //Pins and system
   pinMode(pin_led, OUTPUT);
-
   digitalWrite(pin_led, HIGH);
+  Serial.begin(115200);                           
   //------------------------------------
-  // definições WIFI
+  //LoRa
+  lora.begin(115200, SERIAL_8N1, rxLoRa, txLoRA); 
+  lora.println("AT+ADDRESS?");                    
+  Serial.println(lora.readString());              
+  delay(20);
+  lora.println("AT+BAND?");                    
+  Serial.println(lora.readString());              
+  delay(20);
+  lora.println("AT+NETWORKID?");                    
+  Serial.println(lora.readString());              
+  //------------------------------------
+  // Wifi 
   WiFi.mode(WIFI_STA);
   WiFiManager wm; // objeto do tipo wifimeneger
   // Gatway.resetSettings();
   bool res;
   // res = Gatway.autoConnect("Gatway_ESP32","biomasimo"); // password protected ap
-  wm.setConfigPortalTimeout(30); // auto close configportal after n seconds
+  wm.setConfigPortalTimeout(40); // auto close configportal after n seconds
   res = wm.autoConnect("ESP32","123456789"); // com senha para acessar o ESP
   if (!res){
     Serial.println("Failed to connect");
@@ -142,28 +139,28 @@ void setup(){
     delay(500); // tempo para a tarefa iniciar
   //------------------------------------
     xTaskCreatePinnedToCore(
-        debug_led,     /* função que implementa a tarefa */
-        "coreTaskTwo", /* nome da tarefa */
-        2000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
-        NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
-        1,             /* prioridade da tarefa (0 a N) */
-        NULL,          /* referência para a tarefa (pode ser NULL) */
-        taskCoreZero);  /* Núcleo que executará a tarefa */
-    delay(500); // tempo para a tarefa iniciar
+        debug_led,     
+        "coreTaskTwo", 
+        1000,          
+        NULL,          
+        1,             
+        NULL,          
+        taskCoreZero);  
+    delay(500); 
   //------------------------------------
     xTaskCreatePinnedToCore(
-        processing,   /* função que implementa a tarefa */
-        "coreTaskThree", /* nome da tarefa */
-        10000,          /* número de palavras a serem alocadas para uso com a pilha da tarefa */
-        NULL,          /* parâmetro de entrada para a tarefa (pode ser NULL) */
-        3,             /* prioridade da tarefa (0 a N) */
-        NULL,          /* referência para a tarefa (pode ser NULL) */
-        taskCoreOne); /* Núcleo que executará a tarefa */
-    delay(500);        // tempo para a tarefa iniciar
+        processing,   
+        "coreTaskThree", 
+        10000,          
+        NULL,          
+        3,             
+        NULL,          
+        taskCoreOne); 
+    delay(500);        
   //------------------------------------
 } // fim setup()
 
-void loop(){} //não executa nada
+void loop(){} 
 
 void publishMQTTtest (void *pcParameters){
   esp_task_wdt_deinit(); //desliga WTG
@@ -417,7 +414,7 @@ void led_to_send(){
   digitalWrite(led_to_rec, LOW);  // Desliga led
 }
 
-void zerar_extractedStrings(){ // função para zerar string que armazena os dados
+void zerar_extractedStrings(){ 
   int i, j;
   // zerar extractedStrings
   for (i = 0; i < 13; ++i){
@@ -459,12 +456,12 @@ void reconnect(){
     //if (client.connect("ESP32Client")){
     if (client.connect("ESP32Client", mqttUser, mqttPassword)){
       Serial.println("Conectado");
+      break;
     }
     else{
       Serial.print("Falha na conexão - Estado: ");
       Serial.print(client.state());
-      Serial.println(" Tentando novamente em 2 segundos");
-      vTaskDelay(2000);
+      Serial.println(" Tentando novamente");
       cont_to_reset++;
     }
     if (cont_to_reset >= 2){
@@ -472,6 +469,6 @@ void reconnect(){
       Serial.println("=======================================");
       ESP.restart();
     }
-    vTaskDelay(1);
+    vTaskDelay(50);
   }
 }
