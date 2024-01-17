@@ -325,15 +325,16 @@ void processing(void *pvParameters){
           Serial.println("Message published successfully");
           delay(200);
           flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada
+          break;
         }
         else{
           Serial.println("Failed to publish message");
           // adicionar aqui o salvamento da mensagem
-          delay(200);
+          delay(300);
           flag_mqtt = false; // se não foi publicado a mensagem de confirmação não será enviada
         }
       }
-      if(flag_mqtt = false) Serial.println("failure to send");
+      if(flag_mqtt == false) Serial.println("failure to send");
       client.endPublish();        //finaliza publicação MQTT
       //-------------------------------------------
       zerar_extractedStrings(); // para zerar a matriz de dados
