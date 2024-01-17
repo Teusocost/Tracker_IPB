@@ -164,6 +164,8 @@ void debug_led (void *pvParameters){
 void processing(void *pvParameters){
   String taskMessage = "Task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
+  short i = 0;
+  short n_try_send_package_mqtt = 3;
   while (true){
     //----------------------------------------------
     //reseta whatchdogs para indicar que o sistema está funcionando normalmente
@@ -309,24 +311,29 @@ void processing(void *pvParameters){
       Serial.println(jsonData);     // imprime o json montado que será encaminhado via MQTT
       //---------------------------
       // confere conexão
-      if (!client.connected())
-      {
-        reconnect();
-      }
-      client.loop();
+      
       //-------------------------------------------
       // Publicar no tópico especificado
-      if (client.publish(topic, jsonData.c_str())){ // encaminha json montado!
-        Serial.println("Message published successfully");
-        delay(200);
-        flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada
+      for(i = 0; i<n_try_send_package_mqtt; i++){
+        if (!client.connected())
+        {
+          reconnect();
+        }
+        Serial.println("sending package via mqtt");
+        client.loop();
+        if (client.publish(topic, jsonData.c_str())){ // encaminha json montado!
+          Serial.println("Message published successfully");
+          delay(200);
+          flag_mqtt = true; // se foi publicado a mensagem de confirmação será enviada
+        }
+        else{
+          Serial.println("Failed to publish message");
+          // adicionar aqui o salvamento da mensagem
+          delay(200);
+          flag_mqtt = false; // se não foi publicado a mensagem de confirmação não será enviada
+        }
       }
-      else{
-        Serial.println("Failed to publish message");
-        // adicionar aqui o salvamento da mensagem
-        delay(200);
-        flag_mqtt = false; // se não foi publicado a mensagem de confirmação não será enviada
-      }
+      if(flag_mqtt = false) Serial.println("failure to send");
       client.endPublish();        //finaliza publicação MQTT
       //-------------------------------------------
       zerar_extractedStrings(); // para zerar a matriz de dados
@@ -470,6 +477,6 @@ void reconnect(){
       Serial.println("=======================================");
       ESP.restart();
     }
-    vTaskDelay(50);
+    delay(80);
   }
 }
