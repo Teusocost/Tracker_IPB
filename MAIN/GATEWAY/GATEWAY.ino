@@ -478,6 +478,6 @@ void reconnect(){
       Serial.println("=======================================");
       ESP.restart();
     }
-    delay(80);
+    vTaskDelay(80);
   }
 }
