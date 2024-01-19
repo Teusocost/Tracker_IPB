@@ -32,6 +32,7 @@ const char *mqttUser = "IPB";
 const char *mqttPassword = "noiottracker";
 const char *topic = "IPB/TESTE/TRACKER/01";
 const char *topic2 = "IPB/TESTE/GATWAY/01";
+unsigned long  time_to_try_mqtt_reconnect = 10 * 1000;
 
 PubSubClient client(espClient);
 short time_to_resend_msg_status_gatway = 30000; // Time to resend gateway status (ms) (EDITABLE)
@@ -94,11 +95,11 @@ void TASKS(){
   xTaskCreatePinnedToCore(
         publishMQTTstatus,   /* função que implementa a tarefa */
         "coreTaskOne", /* task name */
-        5000,          /* words */
+        2000,          /* words */
         NULL,          /* entrance parameter */
-        2,             /* Priority */
+        1,             /* Priority */
         NULL,          /* Reference */
-        taskCoreZero);  /* Core */
+        taskCoreOne);  /* Core */
 
     delay(500); // tempo para a tarefa iniciar
   //------------------------------------
@@ -117,7 +118,7 @@ void TASKS(){
         "coreTaskThree", 
         10000,          
         NULL,          
-        3,             
+        2,             
         NULL,          
         taskCoreOne); 
     delay(500);   
@@ -125,20 +126,20 @@ void TASKS(){
 
 void publishMQTTstatus (void *pcParameters){
   while(true){
-      if (!client.connected()){
-        reconnect();
-      }
-      client.loop();           // cliente em loop (MQTT)
-      rssi = WiFi.RSSI();      // recebe Rssi WiFi
-      gat["RSSI_WIFI"] = rssi; // atribui ao Json gat
+    if (!client.connected()){
+      reconnect();
+    }
+    client.loop();           
+    rssi = WiFi.RSSI();      
+    gat["RSSI_WIFI"] = rssi; 
 
-      jsonStatus = "";                // Apaga informações antiga da string
-      serializeJson(gat, jsonStatus); // Serializa o pacote json
+    jsonStatus = "";                
+    serializeJson(gat, jsonStatus); 
 
-      client.publish(topic2, jsonStatus.c_str());            // publica json no tópico especificado
-      Serial.print("\nSTATUS GATWAY ENVIADO - RSSI WIFI: "); // mostra msg de envio
-      Serial.println(rssi);                                  // valor do rssi
-      vTaskDelay(time_to_resend_msg_status_gatway);          // taks dorme por tempo definido
+    client.publish(topic2, jsonStatus.c_str());            
+    Serial.print("\nSTATUS GATWAY ENVIADO - RSSI WIFI: "); 
+    Serial.println(rssi);                                  
+    vTaskDelay(time_to_resend_msg_status_gatway);         
   }
 }
 
@@ -182,6 +183,7 @@ void processing(void *pvParameters){
       time_show_msg = millis();
     }
     if (lora.available()){
+
       Serial.println("\n========[PACOTE CHEGOU]=========="); // debug serial
       incomingString = lora.readString();
       Serial.println(incomingString);
@@ -348,6 +350,7 @@ void processing(void *pvParameters){
       }
       //-------------------------------------------
     }
+    vTaskDelay(1);
   }
 }
 
@@ -457,7 +460,8 @@ void toggleSerial(bool enable){
 }
 
 void reconnect(){
-  int cont_to_reset = 0;
+  short cont_to_reset = 0;
+  unsigned long now = millis();
   while (!client.connected()){
     client.setServer(mqttServer, mqttPort);
     Serial.println("\nConectando ao broker MQTT...");
@@ -472,12 +476,13 @@ void reconnect(){
       Serial.print(client.state());
       Serial.println(" Tentando novamente");
       cont_to_reset++;
+      if (cont_to_reset >= 2){
+        Serial.println("Não foi possivel reconectar ao Broker, reiniciando sistema");
+        Serial.println("=======================================");
+        ESP.restart();
+      }
     }
-    if (cont_to_reset >= 2){
-      Serial.println("Não foi possivel reconectar ao Broker, reiniciando sistema");
-      Serial.println("=======================================");
-      ESP.restart();
-    }
-    vTaskDelay(80);
+    delay(80);
+    if(now >= now + time_to_try_mqtt_reconnect) break;
   }
 }
