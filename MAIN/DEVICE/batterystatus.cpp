@@ -17,7 +17,7 @@ void batterystatus(float &Voltage, int &Percentage)
     sensorValue = analogRead(analogInPin);
     Voltage = (((sensorValue * 3.3) / 4096) * 2 + calibration); // multiply by two as voltage divider network is 100K & 100K Resistor
                                                                      // 0.18 -> compensação do transistor
-    Percentage = mapfloat(Voltage, 2.70, 4.20, 0, 100); // 2.8V as Battery Cut off Voltage & 4.2V as Maximum Voltage
+    Percentage = mapfloat(Voltage, 2.70, 4.20, 0, 100); // 2.7V as Battery Cut off Voltage & 4.2V as Maximum Voltage
 
     if (Percentage >= 100)
     {
