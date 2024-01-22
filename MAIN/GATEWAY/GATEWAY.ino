@@ -4,7 +4,7 @@
  *   This code went developer to last work in IPB - BRAGANÇA 
  * 
  *   Autor: Mateus Costa de Araujo 
- *   Data:  Fevereiro, 2024
+ *   Data:  February, 2024
  *
 ============================================================================ */
 // Lybrares
