@@ -467,7 +467,7 @@ void reconnect(){
     Serial.println("\nConectando ao broker MQTT...");
 
     //if (client.connect("ESP32Client")){
-    if (client.connect("ESP32Client", mqttUser, mqttPassword)){
+    if (client.connect("ESP32_Gateway_IPB_Tracker", mqttUser, mqttPassword)){
       Serial.println("Conectado");
       break;
     }
