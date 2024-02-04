@@ -45,12 +45,13 @@ int sat    = 0,
     minute = 0, 
     second = 0;
 
-unsigned short time_gps_wait = 300 * 1000,            // time waiting signal GNSS                 (EDITABLE)
-               delay_read_gps = 1000,                 // time across two GNSS read
-               time_to_available_gps = 3 * 1000;      // time waiting the GNSS response           (EDITABLE)
-unsigned long now = 0;                     // Control time
-unsigned long now_finish = 0;              // Control time
-char count_blink_led = 0;                  // Flag on when device turn on in first
+unsigned long time_gps_wait = 300 * 1000,                 // time waiting signal GNSS                 (EDITABLE)
+    delay_read_gps = 1000,                                // time across two GNSS read
+    time_to_available_gps = 3 * 1000;                     // time waiting the GNSS response           (EDITABLE)
+unsigned short filter_to_first_acquisition_GPS_data = 10; // filter the first acquisition gps data                (EDITABLE)
+unsigned long now = 0;                                    // Control time
+unsigned long now_finish = 0;                             // Control time
+char count_blink_led = 0;                                 // Flag on when device turn on in first
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
@@ -66,8 +67,8 @@ unsigned int time_finish_resend = time_to_resend * 2; // attempts number
 String lastValue;
 int requiredBufferSize = 0;     // Package size
 char mensagem[120],             // Final package before send messege
-    data[80],                   // Corrent messege package
-    keep[100];                  // Save messe in SPIFFS
+     data[80],                   // Corrent messege package
+     keep[100];                  // Save messe in SPIFFS
 String incomingString = "NULL"; // Primary information received
 char *searchTerm = "OK";        // Confirmation messege resend to node
 char *conf;                     // Manipulation package variable
@@ -94,7 +95,7 @@ int   Percentage = 0.0;
 //---------------------------------------------------------
 //system variables
 esp_reset_reason_t reason;            // Reason that reset microcontroller
-bool cont_to_led = 0;
+bool flag_firts_on = 0;
 //==========================================================================
 //Function
 void PINS();
@@ -212,7 +213,7 @@ void SHT21_ADXL345_ON(){
 }
 
 void Device_switch_turn_on(){
-  cont_to_led = 1;
+  flag_firts_on = 1;
   toggleSerial_lora(true);
   digitalWrite(status_sensor_lora, HIGH); // LoRa On
   delay(100);
@@ -250,24 +251,37 @@ void First_GNSS_test(){
   }
 }
 
-void GET_GNSS_DATA(){
-  now = millis(); 
+void GET_GNSS_DATA(){ 
+
+  short i = 0;
+
+  Serial.println(time_gps_wait);
   while (millis() < (now + time_gps_wait)){ 
     if (gps.encode(gpsSerial.read())){ // Is there data?
+      Serial.print("Millis: ");
+      Serial.println(millis());
+      Serial.print("Time alvo: ");
+      Serial.println(now + time_gps_wait);
       Serial.print("STATUS: ");
       Serial.println(gpsSerial.available()?"TRUE":"FALSE"); 
       gps.encode(gpsSerial.read()); // Read raw data 
       read_all_data_gps();          
       printallvalues();
       Serial.println("----------------------");
-      if (lat != 0 && lon != 0){
+      if (lat != 0 && lon != 0 && gps.location.isValid()){
         Serial.println("Coordenadas encontradas");
-        break; 
+
+        if(flag_firts_on){  //filter gps data
+          i++;
+          Serial.println("Apurando localização, n: ");
+          Serial.println(i);
+          if(i >= filter_to_first_acquisition_GPS_data) break;
+        } else break;
       }
       delay(delay_read_gps);
     }
   }
-  if (millis() >= now + time_gps_wait && lat == 0 && lon == 0){
+  if (millis() >= (now + time_gps_wait) && lat == 0 && lon == 0){
     Serial.println("Coordenadas não encontradas"); // informa essa condição
     //digitalWrite(status_sensors, LOW);             // desliga todos os sensores (DHT21, L80 ADXL345) (NÃO SERÃO UTILIZADOS)
     //gps_standby();
@@ -345,7 +359,7 @@ void WAIT_GATEWAY_CONFIRMATION(){
       }
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    // TRATAMENTO DE MENSAGEM QUE CHEGOU
+    // MSD RECEIVED
 
     if (incomingString != NULL){ // se chegou algum dado
 
@@ -540,7 +554,7 @@ void printallvalues(){
   
   //led_to_send();    //pisca o led três vezes ao ler valores gnss
   
-  if (count_blink_led <= 3 && cont_to_led){ // para indicar que o gnss está funcionando normalmente
+  if (count_blink_led <= 3 && flag_firts_on){ // para indicar que o gnss está funcionando normalmente
       led_to_send();    //pisca o led três vezes ao ler valores gnss
       count_blink_led++;
   }
