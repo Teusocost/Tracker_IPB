@@ -32,7 +32,7 @@
 #define status_sensors 18             
 #define status_battery 4
 //==========================================================================
-// GPS variables
+// GPS global variables
 double lat = 0.0, 
        lon = 0.0;
        
@@ -48,7 +48,7 @@ int sat    = 0,
 unsigned long time_gps_wait = 300 * 1000,                 // time waiting signal GNSS                 (EDITABLE)
     delay_read_gps = 1000,                                // time across two GNSS read
     time_to_available_gps = 3 * 1000;                     // time waiting the GNSS response           (EDITABLE)
-unsigned short filter_to_first_acquisition_GPS_data = 10; // filter the first acquisition gps data                (EDITABLE)
+unsigned short filter_to_first_acquisition_GPS_data = 15; // filter the first acquisition gps data     (EDITABLE)
 unsigned long now = 0;                                    // Control time
 unsigned long now_finish = 0;                             // Control time
 char count_blink_led = 0;                                 // Flag on when device turn on in first
@@ -253,8 +253,6 @@ void First_GNSS_test(){
 
 void GET_GNSS_DATA(){ 
 
-  short i = 0;
-
   Serial.println(time_gps_wait);
   while (millis() < (now + time_gps_wait)){ 
     if (gps.encode(gpsSerial.read())){ // Is there data?
@@ -271,12 +269,12 @@ void GET_GNSS_DATA(){
       if (lat != 0 && lon != 0 && gps.location.isValid()){
         Serial.println("Coordenadas encontradas");
 
-        if(flag_firts_on){  //filter gps data
-          i++;
-          Serial.println("Apurando localização, n: ");
-          Serial.println(i);
-          if(i >= filter_to_first_acquisition_GPS_data) break;
-        } else break;
+        if (flag_firts_on){ // filter gps data
+          if (FIRST_GNSS_GET())
+            break;
+        }
+        else
+          break;
       }
       delay(delay_read_gps);
     }
@@ -288,6 +286,24 @@ void GET_GNSS_DATA(){
     //goto without_lat_lon; // programa pula envio ou não de pacote antigos
   }
   gps_standby(); // coloca o gps em standby
+}
+
+bool FIRST_GNSS_GET(){
+  static short i = 0;
+  static double lat_temp = 0,
+                lon_temp = 0;
+
+  if(lat_temp != lat || lon_temp != lon){
+    lat_temp = lat;
+    lon_temp = lon;
+    i++;
+    Serial.println("Apurando localização, n: ");
+    Serial.println(i);
+    if (i >= filter_to_first_acquisition_GPS_data)
+      return 1;
+    else
+      return 0;
+  }
 }
 
 void GET_BATTERY_STATUS(){
