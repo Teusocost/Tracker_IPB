@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-02-06T11:49:10.459Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0" etag="ELGy6KK8GiwbCH2p6IKg" version="23.1.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-02-06T11:50:17.085Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0" etag="AIvQV9PTn3HC4T3pCSk6" version="23.1.1" type="github">
   <diagram name="Página-1" id="JFiHcB_VvqzaN9PdD7ch">
     <mxGraphModel dx="723" dy="386" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -52,7 +52,7 @@
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-11" value="Battery&lt;br&gt;INR18650-35E 4.2V" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="613" y="252.5" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-13" value="Solar painel&lt;br&gt;5.5V" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-13" value="Solar panel&lt;br&gt;5.5V" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="493" y="252.5" width="110" height="50" as="geometry" />
         </mxCell>
       </root>
