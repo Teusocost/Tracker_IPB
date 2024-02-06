@@ -1,29 +1,29 @@
-<mxfile host="app.diagrams.net" modified="2024-02-06T11:50:17.085Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0" etag="AIvQV9PTn3HC4T3pCSk6" version="23.1.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-02-06T11:54:48.773Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0" etag="55NC23AekeLQz6LVdLUI" version="23.1.1" type="github">
   <diagram name="Página-1" id="JFiHcB_VvqzaN9PdD7ch">
     <mxGraphModel dx="723" dy="386" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-1" value="Booster module&lt;br&gt;TPS63020 3.3V" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-8" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="490" y="165.5" width="237" height="141" as="geometry" />
+        </mxCell>
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-1" value="Booster module&lt;br&gt;TPS63020 3.3V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
           <mxGeometry x="613" y="197.5" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-2">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=none;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-2">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-5">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;startArrow=classic;startFill=1;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-6">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-6">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-7">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;startArrow=classic;startFill=1;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-3" target="pTaLiJyL9nRCCdv1b4c_-7">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-3" value="Microcontroller&lt;br&gt;ESP32" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="364" y="200.5" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-5" target="pTaLiJyL9nRCCdv1b4c_-3">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-5" value="Inercial sensor&lt;br&gt;ADXL345" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="207.5" y="210.5" width="110" height="50" as="geometry" />
@@ -34,25 +34,25 @@
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-7" value="LoRa module&lt;br&gt;Lylr 998" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="207.5" y="270.5" width="110" height="50" as="geometry" />
         </mxCell>
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-2" target="pTaLiJyL9nRCCdv1b4c_-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-2" value="temp and hum sensor &lt;br&gt;SHT21" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="351" y="120" width="125" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-12" value="Charger module&lt;br&gt;TP4056&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-12" value="Charger module&lt;br&gt;TP4056&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
           <mxGeometry x="493" y="197.5" width="110" height="50" as="geometry" />
         </mxCell>
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="pTaLiJyL9nRCCdv1b4c_-8" target="pTaLiJyL9nRCCdv1b4c_-3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-8" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
-          <mxGeometry x="490" y="165.5" width="237" height="141" as="geometry" />
-        </mxCell>
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-9" value="Power system" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
           <mxGeometry x="560" y="164.5" width="100" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-11" value="Battery&lt;br&gt;INR18650-35E 4.2V" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-11" value="Battery&lt;br&gt;INR18650-35E 4.2V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
           <mxGeometry x="613" y="252.5" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-13" value="Solar panel&lt;br&gt;5.5V" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-13" value="Solar panel&lt;br&gt;5.5V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
           <mxGeometry x="493" y="252.5" width="110" height="50" as="geometry" />
         </mxCell>
       </root>
