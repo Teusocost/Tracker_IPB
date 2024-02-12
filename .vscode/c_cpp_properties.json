@@ -225,6 +225,7 @@
                 "C:\\Users\\Mateus\\OneDrive\\Documentos\\Arduino\\libraries\\Adafruit_ADXL345",
                 "C:\\Users\\Mateus\\OneDrive\\Documentos\\Arduino\\libraries\\Adafruit_BusIO",
                 "C:\\Users\\Mateus\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\2.0.14\\libraries\\SPI\\src",
+                "C:\\Users\\Mateus\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\2.0.14\\libraries\\EEPROM\\src",
                 "c:\\users\\mateus\\appdata\\local\\arduino15\\packages\\esp32\\tools\\xtensa-esp32-elf-gcc\\esp-2021r2-patch5-8.4.0\\xtensa-esp32-elf\\include\\c++\\8.4.0",
                 "c:\\users\\mateus\\appdata\\local\\arduino15\\packages\\esp32\\tools\\xtensa-esp32-elf-gcc\\esp-2021r2-patch5-8.4.0\\xtensa-esp32-elf\\include\\c++\\8.4.0\\xtensa-esp32-elf",
                 "c:\\users\\mateus\\appdata\\local\\arduino15\\packages\\esp32\\tools\\xtensa-esp32-elf-gcc\\esp-2021r2-patch5-8.4.0\\xtensa-esp32-elf\\include\\c++\\8.4.0\\backward",
