@@ -17,6 +17,7 @@
 #include "batterystatus.h"
 #include <Adafruit_Sensor.h>            // accelerometer
 #include <Adafruit_ADXL345_U.h>         // accelerometer
+#include <EEPROM.h>
 //==========================================================================
 // Defines
 #define rxGPS 16
@@ -31,6 +32,7 @@
 #define status_sensor_lora 32         
 #define status_sensors 18             
 #define status_battery 4
+#define EEPROM_ADDRESS_TO_FILTER_GPS 0
 //==========================================================================
 // GPS global variables
 double lat = 0.0, 
@@ -48,10 +50,12 @@ int sat    = 0,
 unsigned long time_gps_wait = 300 * 1000,                 // time waiting signal GNSS                 (EDITABLE)
     delay_read_gps = 1000,                                // time across two GNSS read
     time_to_available_gps = 3 * 1000;                     // time waiting the GNSS response           (EDITABLE)
-unsigned short filter_to_first_acquisition_GPS_data = 15; // filter the first acquisition gps data     (EDITABLE)
+unsigned short filter_to_first_acquisition_GPS_data = 15, // filter the first acquisition gps data    (EDITABLE)
+               commum_filter_acquisition_GPS_data = 3;    // filter the acquisition gps data          (EDITABLE)
 unsigned long now = 0;                                    // Control time
 unsigned long now_finish = 0;                             // Control time
 char count_blink_led = 0;                                 // Flag on when device turn on in first
+bool EEPROM_flag_gps_filter = false;                      // Flag to filter GPS data
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
@@ -98,12 +102,16 @@ esp_reset_reason_t reason;            // Reason that reset microcontroller
 bool flag_firts_on = 0;
 //==========================================================================
 //Function
+void EEPROM_FLAGS();
 void PINS();
 void GNSS_ON(); 
 void SHT21_ADXL345_ON();
 void Device_switch_turn_on();
 void First_GNSS_test();
 void GET_GNSS_DATA();
+bool FILTER_GPS_DATA(short type);
+void EEPROM_SET_FLAG_TO_FILTER_GNSS_TRUE();
+void EEPROM_SET_FLAG_TO_FILTER_GNSS_FALSE();
 void GET_BATTERY_STATUS();
 void GET_ACCELEROMETER_DATA();
 void SEND_LORA_CURRENT_PACKAGE();
@@ -131,8 +139,9 @@ void security_function();
 void setup(){
   //--------------------------
   //System definitions
-  Serial.begin(115200); 
   setCpuFrequencyMhz(20);
+  Serial.begin(115200);
+  EEPROM_FLAGS(); 
   PINS();
   reason = esp_reset_reason(); //reason to restart microcontroller
   //--------------------------
@@ -180,6 +189,13 @@ void loop(){
 } // End process
 //==========================================================================
 // FUNCTIONS
+void EEPROM_FLAGS(){
+  EEPROM.begin(1);
+  EEPROM_flag_gps_filter = EEPROM.read(EEPROM_ADDRESS_TO_FILTER_GPS);
+  Serial.print("Flag EEPROM GNSS: ");
+  Serial.println(EEPROM_flag_gps_filter);
+}
+
 void PINS(){
   pinMode(LED_BUILTIN_MQTT_SEND, OUTPUT); 
   pinMode(status_sensor_lora, OUTPUT);    
@@ -266,21 +282,26 @@ void GET_GNSS_DATA(){
       read_all_data_gps();          
       printallvalues();
       Serial.println("----------------------");
+
       if (lat != 0 && lon != 0 && gps.location.isValid()){
         Serial.println("Coordenadas encontradas");
 
-        if (flag_firts_on){ // filter gps data
-          if (FIRST_GNSS_GET())
+        if (flag_firts_on || EEPROM_flag_gps_filter){ // filter gps data
+          if (FILTER_GPS_DATA(flag_firts_on))
             break;
         }
-        else
-          break;
+        else{
+          if(FILTER_GPS_DATA(flag_firts_on))
+            break;
+        }
       }
       delay(delay_read_gps);
     }
   }
   if (millis() >= (now + time_gps_wait) && lat == 0 && lon == 0){
-    Serial.println("Coordenadas não encontradas"); // informa essa condição
+    Serial.println("Coordenadas não encontradas"); 
+    if(!EEPROM_flag_gps_filter) EEPROM_SET_FLAG_TO_FILTER_GNSS_TRUE();
+
     //digitalWrite(status_sensors, LOW);             // desliga todos os sensores (DHT21, L80 ADXL345) (NÃO SERÃO UTILIZADOS)
     //gps_standby();
     //goto without_lat_lon; // programa pula envio ou não de pacote antigos
@@ -288,7 +309,7 @@ void GET_GNSS_DATA(){
   gps_standby(); // coloca o gps em standby
 }
 
-bool FIRST_GNSS_GET(){
+bool FILTER_GPS_DATA(short type){
   static short i = 0;
   static double lat_temp = 0,
                 lon_temp = 0;
@@ -299,11 +320,41 @@ bool FIRST_GNSS_GET(){
     i++;
     Serial.println("Apurando localização, n: ");
     Serial.println(i);
-    if (i >= filter_to_first_acquisition_GPS_data)
-      return 1;
-    else
-      return 0;
+
+    switch (type){
+      case 0:
+        if (i >= commum_filter_acquisition_GPS_data)
+          return 1;
+        else
+          return 0;
+
+      case 1:
+        if (i >= filter_to_first_acquisition_GPS_data){
+          EEPROM_SET_FLAG_TO_FILTER_GNSS_FALSE();
+          return 1;
+        }
+        else
+          return 0;
+      default:
+        return 0;
+    }
   }
+}
+
+bool FILTER_LAT_LONG(){
+
+}
+
+void EEPROM_SET_FLAG_TO_FILTER_GNSS_TRUE(){
+    EEPROM.write(EEPROM_ADDRESS_TO_FILTER_GPS, true);
+    EEPROM.commit();
+    Serial.println("Valor atualizado na EEPROM: TRUE");
+}
+
+void EEPROM_SET_FLAG_TO_FILTER_GNSS_FALSE(){
+    EEPROM.write(EEPROM_ADDRESS_TO_FILTER_GPS, false);
+    EEPROM.commit();
+    Serial.println("Valor atualizado na EEPROM: FALSE");
 }
 
 void GET_BATTERY_STATUS(){
