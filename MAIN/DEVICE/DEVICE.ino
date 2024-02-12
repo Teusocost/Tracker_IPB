@@ -315,15 +315,13 @@ bool FILTER_GPS_DATA(short type){
   static short i = 0;
   static double lat_temp = 0,
                 lon_temp = 0;
-  Serial.println(!comparation(lat_temp,lat));
-  Serial.println(!comparation(lon_temp,lon));
   if(!comparation(lat_temp,lat) || !comparation(lon_temp,lon)){
     lat_temp = lat;
     lon_temp = lon;
     i++;
     Serial.print("Apurando localização, n: ");
     Serial.println(i);
-    
+
     switch (type){
       case 0:
         if (i >= commum_filter_acquisition_GPS_data)
