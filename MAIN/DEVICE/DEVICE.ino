@@ -18,6 +18,7 @@
 #include <Adafruit_Sensor.h>            // accelerometer
 #include <Adafruit_ADXL345_U.h>         // accelerometer
 #include <EEPROM.h>
+#include <math.h>
 //==========================================================================
 // Defines
 #define rxGPS 16
@@ -56,6 +57,7 @@ unsigned long now = 0;                                    // Control time
 unsigned long now_finish = 0;                             // Control time
 char count_blink_led = 0;                                 // Flag on when device turn on in first
 bool EEPROM_flag_gps_filter = false;                      // Flag to filter GPS data
+int decimal = 6;                                          // decimal place to analyze in gps          (EDITABLE)
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
@@ -110,6 +112,7 @@ void Device_switch_turn_on();
 void First_GNSS_test();
 void GET_GNSS_DATA();
 bool FILTER_GPS_DATA(short type);
+int comparation(double previous, double current);
 void EEPROM_SET_FLAG_TO_FILTER_GNSS_TRUE();
 void EEPROM_SET_FLAG_TO_FILTER_GNSS_FALSE();
 void GET_BATTERY_STATUS();
@@ -269,7 +272,6 @@ void First_GNSS_test(){
 
 void GET_GNSS_DATA(){ 
 
-  Serial.println(time_gps_wait);
   while (millis() < (now + time_gps_wait)){ 
     if (gps.encode(gpsSerial.read())){ // Is there data?
       Serial.print("Millis: ");
@@ -287,11 +289,11 @@ void GET_GNSS_DATA(){
         Serial.println("Coordenadas encontradas");
 
         if (flag_firts_on || EEPROM_flag_gps_filter){ // filter gps data
-          if (FILTER_GPS_DATA(flag_firts_on))
+          if(FILTER_GPS_DATA(1))
             break;
         }
         else{
-          if(FILTER_GPS_DATA(flag_firts_on))
+          if(FILTER_GPS_DATA(0))
             break;
         }
       }
@@ -313,14 +315,15 @@ bool FILTER_GPS_DATA(short type){
   static short i = 0;
   static double lat_temp = 0,
                 lon_temp = 0;
-
-  if(lat_temp != lat || lon_temp != lon){
+  Serial.println(!comparation(lat_temp,lat));
+  Serial.println(!comparation(lon_temp,lon));
+  if(!comparation(lat_temp,lat) || !comparation(lon_temp,lon)){
     lat_temp = lat;
     lon_temp = lon;
     i++;
-    Serial.println("Apurando localização, n: ");
+    Serial.print("Apurando localização, n: ");
     Serial.println(i);
-
+    
     switch (type){
       case 0:
         if (i >= commum_filter_acquisition_GPS_data)
@@ -339,10 +342,13 @@ bool FILTER_GPS_DATA(short type){
         return 0;
     }
   }
+  else
+   return 0;
 }
 
-bool FILTER_LAT_LONG(){
-
+int comparation(double previous, double current){
+    static double tol = 1.0 / pow(10, decimal);
+    return fabs(previous - current) < tol;
 }
 
 void EEPROM_SET_FLAG_TO_FILTER_GNSS_TRUE(){
@@ -604,6 +610,8 @@ void printallvalues(){
   Serial.println(lon, 6);
   Serial.print("SPEED: ");
   Serial.println(vel);
+  Serial.print("SAT: ");
+  Serial.println(sat);
 
   Serial.print("Date: ");
   Serial.printf("%02d",day);
