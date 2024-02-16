@@ -468,8 +468,7 @@ void WAIT_GATEWAY_CONFIRMATION(){
             lastValue.toCharArray(lastvalue_char, 80);                                              // método transforma string em char
             requiredBufferSize = snprintf(NULL, 0, "%s", lastvalue_char);                           // calcula tamanho string
             sprintf(mensagem, "AT+SEND=%c,%i,%s", end_to_send, requiredBufferSize, lastvalue_char); // junta as informações em "mensagem"
-            reen_data();                                                                            // funcao para enviar dados
-            configuration_to_confirmation();                                                        // atualiza variaiveis de controle de tempo para aguardar confirmacao
+            reen_data();                                                                            // funcao para enviar dados                                                      // atualiza variaiveis de controle de tempo para aguardar confirmacao
             incomingString = "NULL";                                                                // apaga ultimo dado recebido em serial
             goto wait_confirmation;                                                                 // retorna para receber confirmação de envio
           }
