@@ -29,7 +29,7 @@
 #define SDA_PIN 21 
 #define SCL_PIN 22 
 #define uS_TO_S_FACTOR 1000000 // to converte micro in secund
-#define TIME_TO_SLEEP 10        //second to Deep Sleep                              (EDITABLE)
+#define TIME_TO_SLEEP 300      //second to Deep Sleep                              (EDITABLE)
 #define status_sensor_lora 32         
 #define status_sensors 18             
 #define status_battery 4
@@ -49,7 +49,7 @@ int sat    = 0,
     second = 0;
 
 unsigned long time_gps_wait = 300 * 1000,                 // time waiting signal GNSS                 (EDITABLE)
-    delay_read_gps = 1000,                                // time across two GNSS read
+    delay_read_gps = 1000,                                // time across two GNSS read                (EDITABLE)
     time_to_available_gps = 3 * 1000;                     // time waiting the GNSS response           (EDITABLE)
 unsigned short filter_to_first_acquisition_GPS_data = 15, // filter the first acquisition gps data    (EDITABLE)
                commum_filter_acquisition_GPS_data = 3;    // filter the acquisition gps data          (EDITABLE)
@@ -57,19 +57,19 @@ unsigned long now = 0;                                    // Control time
 unsigned long now_finish = 0;                             // Control time
 char count_blink_led = 0;                                 // Flag on when device turn on in first
 bool EEPROM_flag_gps_filter = false;                      // Flag to filter GPS data
-int decimal = 6;                                          // decimal place to analyze in gps          (EDITABLE)
+int decimal = 6;                                          // decimal place to analyze in gps          
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
 //---------------------------------------------------------
 //LoRa variables
 HardwareSerial lora(1);
 char end_to_send = '2';                  // Address to send package
-unsigned long time_geral = 0;            // Send attempt flag
-unsigned short tent = 1;                            // Attempt number (send LoRa package)
-unsigned int time_to_resend = 10 * 1000; // Time (ms) to resend lora package
+unsigned long time_geral = 0;            // Send attempt flag   
+unsigned short tent = 1;                 // Attempt number (send LoRa package)                        
+unsigned int time_to_resend = 10 * 1000; // Time (ms) to resend lora package                          (EDITABLE)
 float time_reenv = 0.0;
 bool flag_to_delete_last_data = false;
-unsigned int time_finish_resend = time_to_resend * 2; // attempts number
+unsigned int time_finish_resend = time_to_resend * 2; // attempts number                              (EDITABLE)
 String lastValue;
 int requiredBufferSize = 0;     // Package size
 char mensagem[120],             // Final package before send messege
@@ -79,7 +79,7 @@ String incomingString = "NULL"; // Primary information received
 char *searchTerm = "OK";        // Confirmation messege resend to node
 char *conf;                     // Manipulation package variable
 bool serialEnabled = true;
-int min_quality_signal_resend = -80; //                                           (EDITABLE)
+int min_quality_signal_resend = -80; //                                                               (EDITABLE)
 //---------------------------------------------------------
 //SPIFFS variables
 SPIFFS_Utils spiffsUtils;

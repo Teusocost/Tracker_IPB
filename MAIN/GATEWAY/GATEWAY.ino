@@ -56,6 +56,7 @@ char last_data[] = "K";        // Character which packet is memory
 char find_gatway[] = "O";      // Character that indicates that the device is looking for the gateway
 char type_data = 0;            //  [0] - current; [1] - memory
 //---------------------------------------------------------
+ 
 // FLOW
 unsigned short break_line = 60000;        
 unsigned short time_to_show_point = 1000; 
@@ -486,3 +487,4 @@ void reconnect(){
     if(now >= now + time_to_try_mqtt_reconnect) break;
   }
 }
+
