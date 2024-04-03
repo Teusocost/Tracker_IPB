@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-04-03T14:44:38.132Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 OPR/108.0.0.0" etag="MkD9HvBCCsInZ7RLI-Ju" version="24.2.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-04-03T15:13:23.331Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 OPR/108.0.0.0" etag="duTaBJzWoy0c_bGPdYnb" version="24.2.1" type="github">
   <diagram name="Página-1" id="JFiHcB_VvqzaN9PdD7ch">
     <mxGraphModel dx="1048" dy="559" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -37,7 +37,7 @@
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="pTaLiJyL9nRCCdv1b4c_-2" target="pTaLiJyL9nRCCdv1b4c_-3" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-2" value="temp and hum sensor &lt;br&gt;SHT21" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-2" value="Temp and hum sensor &lt;br&gt;SHT21" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="351" y="120" width="125" height="50" as="geometry" />
         </mxCell>
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-12" value="Charger module&lt;br&gt;TP4056&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" parent="1" vertex="1">
