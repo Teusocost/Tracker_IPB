@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-02-08T18:08:35.721Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0" etag="HAwGPRdeS1_fyl1jLZGP" version="23.1.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-04-03T14:44:38.132Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 OPR/108.0.0.0" etag="MkD9HvBCCsInZ7RLI-Ju" version="24.2.1" type="github">
   <diagram name="Página-1" id="JFiHcB_VvqzaN9PdD7ch">
     <mxGraphModel dx="1048" dy="559" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -28,10 +28,10 @@
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-5" value="Inercial sensor&lt;br&gt;ADXL345" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="207.5" y="210.5" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-6" value="GNSS module&lt;br&gt;L80-M39" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-6" value="GNSS&amp;nbsp;L80-M39 module" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="207.5" y="150.5" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="pTaLiJyL9nRCCdv1b4c_-7" value="LoRa module&lt;br&gt;Lylr 998" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="pTaLiJyL9nRCCdv1b4c_-7" value="LoRa&amp;nbsp;LYLR 998 module" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="207.5" y="270.5" width="110" height="50" as="geometry" />
         </mxCell>
         <mxCell id="pTaLiJyL9nRCCdv1b4c_-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="pTaLiJyL9nRCCdv1b4c_-2" target="pTaLiJyL9nRCCdv1b4c_-3" edge="1">
