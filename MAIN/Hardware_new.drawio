@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-07-17T17:41:59.154Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 OPR/111.0.0.0" etag="7xOzSCHUNJ4hpAeyoeAN" version="24.7.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-07-17T17:42:27.384Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 OPR/111.0.0.0" etag="nLSQ5OrLgSwrbusWFn-h" version="24.7.1" type="github">
   <diagram name="Página-1" id="As4PcaeyPNjhqhuAYCdB">
     <mxGraphModel dx="988" dy="510" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -129,16 +129,16 @@
         <mxCell id="nqdYKwkmjAAybZpAhHxP-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;fillColor=#e3c800;strokeColor=#B09500;" edge="1" parent="1" source="nqdYKwkmjAAybZpAhHxP-33" target="nqdYKwkmjAAybZpAhHxP-34">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="nqdYKwkmjAAybZpAhHxP-33" value="Battery&lt;br&gt;INR18650-35E 4.2V" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3c800;strokeColor=none;fontColor=#000000;shadow=1;" vertex="1" parent="1">
+        <mxCell id="nqdYKwkmjAAybZpAhHxP-33" value="Battery 4.2V&lt;br&gt;(INR18650-35E)&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3c800;strokeColor=none;fontColor=#000000;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="237" y="500" width="120" height="50" as="geometry" />
         </mxCell>
         <mxCell id="nqdYKwkmjAAybZpAhHxP-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#e3c800;strokeColor=#B09500;" edge="1" parent="1" source="nqdYKwkmjAAybZpAhHxP-34" target="nqdYKwkmjAAybZpAhHxP-35">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="nqdYKwkmjAAybZpAhHxP-34" value="Charger module&lt;br&gt;TP4056&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3c800;strokeColor=none;fontColor=#000000;shadow=1;" vertex="1" parent="1">
+        <mxCell id="nqdYKwkmjAAybZpAhHxP-34" value="Charger module&lt;br&gt;(TP4056)&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3c800;strokeColor=none;fontColor=#000000;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="390" y="500" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="nqdYKwkmjAAybZpAhHxP-35" value="switch On/Of" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3c800;strokeColor=none;fontColor=#000000;shadow=1;" vertex="1" parent="1">
+        <mxCell id="nqdYKwkmjAAybZpAhHxP-35" value="Switch On/Of" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3c800;strokeColor=none;fontColor=#000000;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="531" y="500" width="110" height="50" as="geometry" />
         </mxCell>
         <mxCell id="nqdYKwkmjAAybZpAhHxP-44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=none;" edge="1" parent="1" target="nqdYKwkmjAAybZpAhHxP-43">
