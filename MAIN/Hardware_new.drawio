@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-07-17T16:53:01.453Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 OPR/111.0.0.0" etag="3c6qo5Zpm2LY4G5dcLDN" version="24.7.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-07-17T16:54:30.434Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 OPR/111.0.0.0" etag="ffng898QG89ZpHqFY6JF" version="24.7.1" type="github">
   <diagram name="Página-1" id="As4PcaeyPNjhqhuAYCdB">
     <mxGraphModel dx="818" dy="422" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -18,11 +18,8 @@
         <mxCell id="nqdYKwkmjAAybZpAhHxP-5" value="&lt;font color=&quot;#000000&quot;&gt;LoRa&amp;nbsp;LYLR 998 module&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#78AFD7;fontColor=#ffffff;strokeColor=#006EAF;shadow=1;" vertex="1" parent="1">
           <mxGeometry x="549" y="310" width="110" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="nqdYKwkmjAAybZpAhHxP-6" value="Charger module&lt;br&gt;TP4056&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
-          <mxGeometry x="334" y="500" width="110" height="50" as="geometry" />
-        </mxCell>
         <mxCell id="nqdYKwkmjAAybZpAhHxP-7" value="Solar panel&lt;br&gt;5.5V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
-          <mxGeometry x="455" y="500" width="110" height="50" as="geometry" />
+          <mxGeometry x="549" y="210" width="110" height="50" as="geometry" />
         </mxCell>
         <mxCell id="nqdYKwkmjAAybZpAhHxP-8" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://www.researchgate.net/publication/355124535/figure/fig2/AS:1076513826963459@1633672305780/IoT-device-structure-and-components.png;" vertex="1" parent="1">
           <mxGeometry x="220" y="650" width="380" height="178.38" as="geometry" />
@@ -108,10 +105,19 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="nqdYKwkmjAAybZpAhHxP-33" value="Battery&lt;br&gt;INR18650-35E 4.2V" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
-          <mxGeometry x="565" y="500" width="110" height="50" as="geometry" />
+          <mxGeometry x="530" y="510" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nqdYKwkmjAAybZpAhHxP-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nqdYKwkmjAAybZpAhHxP-34" target="nqdYKwkmjAAybZpAhHxP-35">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="nqdYKwkmjAAybZpAhHxP-34" value="Charger module&lt;br&gt;TP4056&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
-          <mxGeometry x="217" y="500" width="110" height="50" as="geometry" />
+          <mxGeometry x="410" y="510" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nqdYKwkmjAAybZpAhHxP-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nqdYKwkmjAAybZpAhHxP-35" target="nqdYKwkmjAAybZpAhHxP-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nqdYKwkmjAAybZpAhHxP-35" value="switch On/Of" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DEDEDE;" vertex="1" parent="1">
+          <mxGeometry x="284" y="510" width="110" height="50" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
